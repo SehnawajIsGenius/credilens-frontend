@@ -16,7 +16,7 @@ export default function Home() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const res = await axios.post('http://localhost:8000/upload', formData)
+      const res = await axios.post('https://credilens-api-xyz.onrender.com/upload', formData)
       setResult(res.data)
     } catch (e) {
       setError('Something went wrong. Make sure your backend is running.')
