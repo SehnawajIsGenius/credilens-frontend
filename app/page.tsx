@@ -16,10 +16,15 @@ export default function Home() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const res = await axios.post('https://credilens-api-xyz.onrender.com/upload', formData)
+      
+      // FIXED: Using your real live Render backend URL
+      const res = await axios.post('https://credilens-api.onrender.com/upload', formData)
+      
       setResult(res.data)
-    } catch (e) {
-      setError('Something went wrong. Make sure your backend is running.')
+    } catch (e: any) {
+      // Improved error message to help you debug
+      setError('Connection failed. If this is the first time today, wait 60s for the server to wake up and try again.')
+      console.error(e)
     }
     setLoading(false)
   }
