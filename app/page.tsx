@@ -263,12 +263,15 @@ export default function Home() {
           onClick={() => { setShowPaywall(false); setShowSignupWall(false); setShowCheckout({show: false, amount: '', planName: '', scans: 0}); }}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center shrink-0">
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <span className="font-semibold text-sm sm:text-base">ClearStatement</span>
+          {/* UPDATED AESTHETIC LOGO FONT */}
+          <span className="font-extrabold tracking-tight text-lg sm:text-xl text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+            ClearStatement
+          </span>
         </button>
 
         <div className="flex items-center gap-3">
@@ -292,7 +295,7 @@ export default function Home() {
           ) : (
             <button
               onClick={signInWithGoogle}
-              className="text-xs text-white bg-white/10 hover:bg-white/15 border border-white/10 px-3 py-1.5 rounded-lg transition-all"
+              className="text-xs text-white bg-white/10 hover:bg-white/15 border border-white/10 px-4 py-2 rounded-lg font-medium transition-all"
             >
               Sign in
             </button>
@@ -414,6 +417,7 @@ export default function Home() {
       )}
 
       <div className="flex-grow max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14 w-full relative z-10">
+        
         {/* SIGNUP WALL */}
         {showSignupWall && (
           <div className="text-center py-10">
@@ -435,7 +439,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* PAYWALL - 3 TIERS */}
+        {/* PAYWALL */}
         {showPaywall && (
           <div className="py-6">
             <div className="text-center mb-10">
@@ -444,7 +448,6 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              
               {/* TIER 1 - STARTER */}
               <div className="bg-white/3 border border-white/10 rounded-2xl p-6 flex flex-col">
                 <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Starter</p>
@@ -499,153 +502,164 @@ export default function Home() {
                   Get Business
                 </button>
               </div>
-
             </div>
           </div>
         )}
 
-        {/* MAIN UPLOAD */}
+        {/* MAIN UPLOAD SECTION - WITH NEW PROFESSIONAL CONTAINER */}
         {!showPaywall && !showSignupWall && !result && (
-          <div className="max-w-3xl mx-auto">
-            {!user && !guestScanned && (
-              <div className="text-center mb-10">
-                <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 text-xs text-blue-400 mb-5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></div>
-                  No signup needed for your first scan
-                </div>
-                <h1 className="text-3xl sm:text-5xl font-bold text-white mb-4 leading-tight">
-                  Verify income in
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400"> 8 seconds</span>
-                </h1>
-                <p className="text-gray-400 text-sm sm:text-lg max-w-xl mx-auto">
-                  Upload any Indian bank statement PDF. Get verified salary, risk score and underwriter summary instantly.
-                </p>
-              </div>
-            )}
+          <div className="max-w-4xl mx-auto relative group mt-4 sm:mt-10">
+            
+            {/* AMBIENT GLOW BEHIND THE CONTAINER */}
+            <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-emerald-500/5 rounded-[2rem] blur-2xl opacity-50 pointer-events-none"></div>
+            
+            {/* THE NEW AESTHETIC WORKSPACE CONTAINER */}
+            <div className="relative bg-[#0B101A] border border-white/10 rounded-[2rem] p-6 sm:p-12 shadow-2xl overflow-hidden">
+              
+              {/* SUBTLE BLUE TOP HIGHLIGHT */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent"></div>
 
-            {user && (
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-white">Welcome back</h2>
-                  <p className="text-gray-500 text-sm mt-0.5">{user.email}</p>
+              {!user && !guestScanned && (
+                <div className="text-center mb-10">
+                  <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 text-xs text-blue-400 mb-6 shadow-sm">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></div>
+                    No signup needed for your first scan
+                  </div>
+                  <h1 className="text-4xl sm:text-6xl font-bold text-white mb-5 leading-tight tracking-tight">
+                    Verify income in
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400"> 8 seconds</span>
+                  </h1>
+                  <p className="text-gray-400 text-sm sm:text-lg max-w-xl mx-auto leading-relaxed">
+                    Upload any Indian bank statement PDF. Get verified salary, risk score and underwriter summary instantly.
+                  </p>
                 </div>
-                {!isPaid && (
-                  <div className="text-right">
-                    <p className="text-xs text-gray-500">Free scans left</p>
-                    <p className="text-2xl font-bold text-white">{scansLeft}</p>
+              )}
+
+              {user && (
+                <div className="mb-8 flex items-center justify-between pb-6 border-b border-white/5">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white tracking-tight">Workspace</h2>
+                    <p className="text-gray-500 text-sm mt-1">{user.email}</p>
+                  </div>
+                  {!isPaid && (
+                    <div className="text-right bg-white/5 px-4 py-2 rounded-xl border border-white/10">
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-0.5">Free scans left</p>
+                      <p className="text-2xl font-bold text-white">{scansLeft}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* UPLOAD BOX INNER CONTAINER */}
+              <div className="bg-white/3 border border-white/5 rounded-2xl sm:rounded-3xl p-5 sm:p-8 relative">
+                <label className={`flex flex-col items-center justify-center w-full h-44 sm:h-56 border-2 border-dashed rounded-xl sm:rounded-2xl cursor-pointer transition-all duration-300 ${
+                  file ? 'border-emerald-500/50 bg-emerald-500/5 shadow-[0_0_30px_-10px_rgba(16,185,129,0.2)]' : 'border-white/10 hover:border-blue-500/40 hover:bg-blue-500/5'
+                }`}>
+                  <div className="text-center px-4">
+                    {file ? (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4 shadow-inner">
+                          <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <p className="text-emerald-400 text-base font-semibold truncate max-w-xs mx-auto">{file.name}</p>
+                        <p className="text-gray-500 text-xs mt-1.5 font-medium uppercase tracking-wider">Ready to analyze</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4 transition-transform group-hover:scale-110">
+                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                        </div>
+                        <p className="text-gray-200 text-base font-medium mb-1.5">Drop bank statement PDF here</p>
+                        <p className="text-gray-500 text-xs">Supports PDF statements up to 10MB</p>
+                      </>
+                    )}
+                  </div>
+                  <input type="file" accept=".pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                </label>
+
+                {loading ? (
+                  <div className="w-full mt-6 bg-[#080c14] border border-white/10 rounded-xl p-5 shadow-inner">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm text-blue-400 font-medium animate-pulse">{loadingText}</span>
+                      <span className="text-sm text-gray-400 font-mono">{Math.round(progress)}%</span>
+                    </div>
+                    <div className="w-full bg-white/5 rounded-full h-2.5 overflow-hidden">
+                      <div 
+                        className="bg-gradient-to-r from-blue-600 to-emerald-400 h-2.5 rounded-full transition-all duration-300 ease-out relative"
+                        style={{ width: `${progress}%` }}
+                      >
+                        <div className="absolute top-0 right-0 bottom-0 left-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgo8L3N2Zz4=')] opacity-50"></div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={handleUpload}
+                      disabled={!file}
+                      className={`flex-1 font-bold py-4 rounded-xl transition-all text-sm tracking-wide ${
+                        file ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-[0_4px_14px_0_rgba(59,130,246,0.39)]'
+                        : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                      }`}
+                    >
+                      {!user ? 'Analyze Free — No signup needed' : 'Analyze Statement'}
+                    </button>
+                    
+                    {file && (
+                      <button
+                        onClick={(e) => { e.preventDefault(); setFile(null); }}
+                        className="px-6 sm:px-8 font-bold py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white rounded-xl transition-all text-sm tracking-wide"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* SECURITY GUARANTEE */}
+                <div className="mt-6 flex items-start sm:items-center justify-center gap-2.5 text-center sm:text-left px-2 bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-3">
+                  <svg className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5 sm:mt-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    <span className="font-semibold text-emerald-400/90">Bank-Grade Security.</span> All PDFs are encrypted and instantly deleted after analysis. We never store your financial data.
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="mt-4 bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3">
+                    <p className="text-rose-400 text-xs text-center font-medium">{error}</p>
                   </div>
                 )}
               </div>
-            )}
-
-            <div className="bg-white/3 border border-white/8 rounded-2xl sm:rounded-3xl p-5 sm:p-8">
-              <label className={`flex flex-col items-center justify-center w-full h-44 sm:h-52 border-2 border-dashed rounded-xl sm:rounded-2xl cursor-pointer transition-all duration-200 ${
-                file ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-white/10 hover:border-blue-500/40'
-              }`}>
-                <div className="text-center px-4">
-                  {file ? (
-                    <>
-                      <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-3">
-                        <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <p className="text-emerald-400 text-sm font-medium truncate max-w-xs mx-auto">{file.name}</p>
-                      <p className="text-gray-600 text-xs mt-1">Ready to analyze</p>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
-                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                        </svg>
-                      </div>
-                      <p className="text-gray-300 text-sm font-medium mb-1">Drop bank statement PDF here</p>
-                      <p className="text-gray-600 text-xs">Supports PDF statements up to 10MB</p>
-                    </>
-                  )}
-                </div>
-                <input type="file" accept=".pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-              </label>
-
-              {loading ? (
-                <div className="w-full mt-4 bg-white/5 border border-white/10 rounded-xl p-5">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm text-blue-400 font-medium animate-pulse">{loadingText}</span>
-                    <span className="text-sm text-gray-400 font-mono">{Math.round(progress)}%</span>
-                  </div>
-                  <div className="w-full bg-black/50 rounded-full h-2.5 overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-r from-blue-600 to-emerald-400 h-2.5 rounded-full transition-all duration-300 ease-out"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex gap-3 mt-4">
-                  <button
-                    onClick={handleUpload}
-                    disabled={!file}
-                    className={`flex-1 font-semibold py-3.5 rounded-xl transition-all text-sm ${
-                      file ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-lg'
-                      : 'bg-white/5 text-gray-600 cursor-not-allowed'
-                    }`}
-                  >
-                    {!user ? 'Analyze Free — No signup needed' : 'Analyze Statement'}
-                  </button>
-                  
-                  {/* CANCEL BUTTON */}
-                  {file && (
-                    <button
-                      onClick={(e) => { e.preventDefault(); setFile(null); }}
-                      className="px-6 sm:px-8 font-semibold py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white rounded-xl transition-all text-sm"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* SECURITY GUARANTEE */}
-              <div className="mt-5 flex items-start sm:items-center justify-center gap-2 text-center sm:text-left px-2">
-                <svg className="w-4 h-4 text-emerald-500/80 shrink-0 mt-0.5 sm:mt-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                <p className="text-xs text-gray-500">
-                  <span className="font-medium text-gray-400">Bank-Grade Security.</span> All PDFs are encrypted and instantly deleted from our servers after analysis. We do not store your financial data.
-                </p>
-              </div>
-
-              {error && (
-                <div className="mt-4 bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3">
-                  <p className="text-rose-400 text-xs text-center">{error}</p>
-                </div>
-              )}
             </div>
 
             {/* INFINITE MARQUEE SLIDER FOR SUPPORTED BANKS */}
-            <div className="mt-14 sm:mt-20">
-              <p className="text-center text-xs font-semibold text-gray-600 uppercase tracking-widest mb-6">Seamlessly processes statements from</p>
+            <div className="mt-16 sm:mt-24">
+              <p className="text-center text-xs font-bold text-gray-600 uppercase tracking-widest mb-8">Seamlessly processes statements from</p>
               
               <div className="relative flex overflow-hidden group">
-                <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-[#080C14] to-transparent z-10 pointer-events-none"></div>
-                <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-[#080C14] to-transparent z-10 pointer-events-none"></div>
+                <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#080C14] to-transparent z-10 pointer-events-none"></div>
+                <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#080C14] to-transparent z-10 pointer-events-none"></div>
 
                 <div className="animate-scroll">
                   {SUPPORTED_BANKS.map((bank, index) => (
-                    <div key={`bank-1-${index}`} className="flex items-center justify-center px-4 sm:px-8">
-                      <span className="text-sm sm:text-base font-bold text-gray-500/50 whitespace-nowrap">{bank}</span>
+                    <div key={`bank-1-${index}`} className="flex items-center justify-center px-6 sm:px-10">
+                      <span className="text-base sm:text-lg font-bold text-gray-500/40 whitespace-nowrap">{bank}</span>
                     </div>
                   ))}
                   {SUPPORTED_BANKS.map((bank, index) => (
-                    <div key={`bank-2-${index}`} className="flex items-center justify-center px-4 sm:px-8">
-                      <span className="text-sm sm:text-base font-bold text-gray-500/50 whitespace-nowrap">{bank}</span>
+                    <div key={`bank-2-${index}`} className="flex items-center justify-center px-6 sm:px-10">
+                      <span className="text-base sm:text-lg font-bold text-gray-500/40 whitespace-nowrap">{bank}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-
           </div>
         )}
 
@@ -654,10 +668,10 @@ export default function Home() {
           <div className="max-w-3xl mx-auto">
             <div className="flex items-start sm:items-center justify-between mb-6 gap-3">
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-white">Analysis Complete</h2>
-                <p className="text-gray-500 text-xs sm:text-sm mt-1">AI-verified financial summary</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Analysis Complete</h2>
+                <p className="text-gray-500 text-xs sm:text-sm mt-1 font-medium">AI-verified financial summary</p>
               </div>
-              <span className={`text-xs font-medium px-3 py-1.5 rounded-full border shrink-0 ${
+              <span className={`text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-lg border shrink-0 shadow-sm ${
                 result.risk_score >= 7 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                 : result.risk_score >= 4 ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
                 : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
@@ -666,24 +680,24 @@ export default function Home() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
               {[
                 { label: 'Monthly Income', value: `₹${result.verified_monthly_salary?.toLocaleString('en-IN')}`, sub: 'Verified salary credits', color: 'text-emerald-400' },
                 { label: 'Risk Score', value: `${result.risk_score}/10`, sub: getRiskLabel(result.risk_score), color: getRiskColor(result.risk_score) },
                 { label: 'Bounced Cheques', value: String(result.bounced_cheque_count), sub: result.bounced_cheque_count === 0 ? 'No bounces detected' : 'Bounces found', color: result.bounced_cheque_count === 0 ? 'text-emerald-400' : 'text-rose-400' },
                 { label: 'Monthly EMI', value: `₹${result.total_emi?.toLocaleString('en-IN')}`, sub: 'Total loan obligations', color: 'text-white' },
               ].map((item) => (
-                <div key={item.label} className="bg-white/3 border border-white/8 rounded-2xl p-5 sm:p-6">
-                  <p className="text-gray-500 text-xs uppercase tracking-widest mb-2">{item.label}</p>
-                  <p className={`text-3xl sm:text-4xl font-bold ${item.color}`}>{item.value}</p>
-                  <p className="text-gray-600 text-xs mt-2">{item.sub}</p>
+                <div key={item.label} className="bg-[#0B101A] border border-white/5 rounded-2xl p-6 sm:p-8 shadow-xl">
+                  <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">{item.label}</p>
+                  <p className={`text-4xl sm:text-5xl font-extrabold tracking-tight ${item.color}`}>{item.value}</p>
+                  <p className="text-gray-500 text-sm mt-3 font-medium">{item.sub}</p>
                 </div>
               ))}
             </div>
 
             <button
               onClick={() => { setResult(null); setFile(null) }}
-              className="w-full bg-white/3 hover:bg-white/6 border border-white/8 text-gray-400 hover:text-white font-medium py-3.5 rounded-xl transition-all text-sm"
+              className="w-full bg-[#0B101A] hover:bg-white/5 border border-white/10 text-gray-300 hover:text-white font-bold tracking-wide py-4 rounded-xl transition-all text-sm shadow-md"
             >
               Analyze Another Statement
             </button>
@@ -692,26 +706,26 @@ export default function Home() {
       </div>
 
       {/* PROFESSIONAL FOOTER WITH FUNCTIONAL LINKS */}
-      <footer className="border-t border-white/5 py-8 mt-auto shrink-0 relative z-20 bg-[#080C14]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-white/5 py-10 mt-auto shrink-0 relative z-20 bg-[#080C14]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex flex-col items-center sm:items-start">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-5 h-5 rounded bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center">
-                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               </div>
-              <span className="text-gray-300 font-medium text-sm">ClearStatement</span>
+              <span className="font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">ClearStatement</span>
             </div>
-            <p className="text-xs text-gray-600">© 2026 ClearStatement. All rights reserved.</p>
+            <p className="text-xs text-gray-600 font-medium">© 2026 ClearStatement. All rights reserved.</p>
           </div>
           
-          <div className="flex items-center gap-6 text-xs text-gray-500">
+          <div className="flex items-center gap-8 text-xs font-medium text-gray-500">
             <button onClick={() => setShowPrivacy(true)} className="hover:text-gray-300 transition-colors">Privacy Policy</button>
             <button onClick={() => setShowTerms(true)} className="hover:text-gray-300 transition-colors">Terms of Service</button>
             <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-gray-300 transition-colors">Support</a>
           </div>
           
-          <div className="text-xs text-gray-600">
-            Engineered by <span className="text-blue-400/80 font-medium">TheArise</span>
+          <div className="text-xs text-gray-600 font-medium px-4 py-2 bg-white/5 rounded-full border border-white/5">
+            Engineered by <span className="text-blue-400/90 font-bold">TheArise</span>
           </div>
         </div>
       </footer>
@@ -719,3 +733,4 @@ export default function Home() {
     </div>
   )
 }
+
