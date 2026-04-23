@@ -12,10 +12,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "ClearStatement | AI Bank Statement Analyzer",
-  description: "Extract verified income data and bounced cheques in seconds.",
-};
+export const metadata = {
+  title: 'ClearStatement | AI Bank Statement Analyzer',
+  description: 'Verify income in 8 seconds',
+  icons: {
+    icon: '/icon.png',
+  },
+}
 
 export default function RootLayout({
   children,
