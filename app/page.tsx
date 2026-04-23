@@ -234,14 +234,20 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#080C14] text-white">
       <nav className="border-b border-white/5 px-4 sm:px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        
+        {/* CLICKABLE LOGO TO RETURN HOME */}
+        <button 
+          onClick={() => { setShowPaywall(false); setShowSignupWall(false); setShowCheckout({show: false, amount: '', planName: '', scans: 0}); }}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center">
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
           <span className="font-semibold text-sm sm:text-base">ClearStatement</span>
-        </div>
+        </button>
+
         <div className="flex items-center gap-3">
           {user ? (
             <>
@@ -382,7 +388,7 @@ export default function Home() {
               <div className="bg-white/3 border border-white/10 rounded-2xl p-6 flex flex-col">
                 <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Starter</p>
                 <p className="text-3xl font-bold text-white mb-1">₹299</p>
-                <p className="text-gray-400 text-sm mb-6 pb-6 border-b border-white/5">10 AI Scans</p>
+                <p className="text-gray-400 text-sm mb-6 pb-6 border-b border-white/5">10 Scans</p>
                 <ul className="text-sm text-gray-400 space-y-3 mb-8 flex-grow">
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>10 statement analyses</li>
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>No expiration date</li>
@@ -401,7 +407,7 @@ export default function Home() {
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs bg-blue-500 text-white px-3 py-1 rounded-full font-medium">Most Popular</span>
                 <p className="text-xs text-blue-400 uppercase tracking-widest mb-1">Pro</p>
                 <p className="text-3xl font-bold text-white mb-1">₹599</p>
-                <p className="text-gray-400 text-sm mb-6 pb-6 border-b border-white/5">25 AI Scans</p>
+                <p className="text-gray-400 text-sm mb-6 pb-6 border-b border-white/5">25 Scans</p>
                 <ul className="text-sm text-gray-400 space-y-3 mb-8 flex-grow">
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>25 statement analyses</li>
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Risk score + Summary</li>
@@ -419,7 +425,7 @@ export default function Home() {
               <div className="bg-white/3 border border-white/10 rounded-2xl p-6 flex flex-col">
                 <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Business</p>
                 <p className="text-3xl font-bold text-white mb-1">₹999</p>
-                <p className="text-gray-400 text-sm mb-6 pb-6 border-b border-white/5">50 AI Scans <span className="text-emerald-400 text-xs ml-2">(Best Value)</span></p>
+                <p className="text-gray-400 text-sm mb-6 pb-6 border-b border-white/5">50 Scans <span className="text-emerald-400 text-xs ml-2">(Best Value)</span></p>
                 <ul className="text-sm text-gray-400 space-y-3 mb-8 flex-grow">
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>50 statement analyses</li>
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Unlocks all features</li>
