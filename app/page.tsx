@@ -382,14 +382,14 @@ export default function Home() {
               <div className="bg-white/3 border border-white/10 rounded-2xl p-6 flex flex-col">
                 <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Starter</p>
                 <p className="text-3xl font-bold text-white mb-1">₹299</p>
-                <p className="text-gray-400 text-sm mb-6 pb-6 border-b border-white/5">5 AI Scans</p>
+                <p className="text-gray-400 text-sm mb-6 pb-6 border-b border-white/5">10 AI Scans</p>
                 <ul className="text-sm text-gray-400 space-y-3 mb-8 flex-grow">
-                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>5 statement analyses</li>
+                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>10 statement analyses</li>
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>No expiration date</li>
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Standard Support</li>
                 </ul>
                 <button
-                  onClick={() => setShowCheckout({show: true, amount: '299', planName: 'Starter', scans: 5})}
+                  onClick={() => setShowCheckout({show: true, amount: '299', planName: 'Starter', scans: 10})}
                   className="w-full bg-white/10 hover:bg-white/15 border border-white/10 text-white font-semibold py-3 rounded-xl transition-all"
                 >
                   Get Starter
@@ -401,14 +401,14 @@ export default function Home() {
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs bg-blue-500 text-white px-3 py-1 rounded-full font-medium">Most Popular</span>
                 <p className="text-xs text-blue-400 uppercase tracking-widest mb-1">Pro</p>
                 <p className="text-3xl font-bold text-white mb-1">₹599</p>
-                <p className="text-gray-400 text-sm mb-6 pb-6 border-b border-white/5">15 AI Scans</p>
+                <p className="text-gray-400 text-sm mb-6 pb-6 border-b border-white/5">25 AI Scans</p>
                 <ul className="text-sm text-gray-400 space-y-3 mb-8 flex-grow">
-                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>15 statement analyses</li>
+                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>25 statement analyses</li>
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Risk score + Summary</li>
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Priority Processing</li>
                 </ul>
                 <button
-                  onClick={() => setShowCheckout({show: true, amount: '599', planName: 'Pro', scans: 15})}
+                  onClick={() => setShowCheckout({show: true, amount: '599', planName: 'Pro', scans: 25})}
                   className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold py-3 rounded-xl transition-all"
                 >
                   Get Pro
@@ -419,14 +419,14 @@ export default function Home() {
               <div className="bg-white/3 border border-white/10 rounded-2xl p-6 flex flex-col">
                 <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Business</p>
                 <p className="text-3xl font-bold text-white mb-1">₹999</p>
-                <p className="text-gray-400 text-sm mb-6 pb-6 border-b border-white/5">40 AI Scans <span className="text-emerald-400 text-xs ml-2">(Best Value)</span></p>
+                <p className="text-gray-400 text-sm mb-6 pb-6 border-b border-white/5">50 AI Scans <span className="text-emerald-400 text-xs ml-2">(Best Value)</span></p>
                 <ul className="text-sm text-gray-400 space-y-3 mb-8 flex-grow">
-                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>40 statement analyses</li>
+                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>50 statement analyses</li>
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Unlocks all features</li>
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Direct Founder Support</li>
                 </ul>
                 <button
-                  onClick={() => setShowCheckout({show: true, amount: '999', planName: 'Business', scans: 40})}
+                  onClick={() => setShowCheckout({show: true, amount: '999', planName: 'Business', scans: 50})}
                   className="w-full bg-white/10 hover:bg-white/15 border border-white/10 text-white font-semibold py-3 rounded-xl transition-all"
                 >
                   Get Business
