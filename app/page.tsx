@@ -10,6 +10,13 @@ const supabase = createClient(
 
 const SUPPORT_EMAIL = 'clearstatement.billing@gmail.com' 
 
+// List of banks for the infinite slider
+const SUPPORTED_BANKS = [
+  'HDFC Bank', 'State Bank of India', 'ICICI Bank', 'Axis Bank', 
+  'Kotak Mahindra', 'Punjab National Bank', 'Bank of Baroda', 
+  'Yes Bank', 'IndusInd Bank', 'IDFC First Bank', 'Canara Bank', 'Union Bank'
+]
+
 export default function Home() {
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
@@ -28,7 +35,7 @@ export default function Home() {
   
   // CHECKOUT AND TIMER STATE
   const [showCheckout, setShowCheckout] = useState<{show: boolean, amount: string, planName: string, scans: number}>({show: false, amount: '', planName: '', scans: 0})
-  const [timeLeft, setTimeLeft] = useState(600) // 600 seconds = 10 minutes
+  const [timeLeft, setTimeLeft] = useState(600)
 
   useEffect(() => {
     const g = localStorage.getItem('guest_scanned')
@@ -69,12 +76,11 @@ export default function Home() {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
     } else if (!showCheckout.show) {
-      setTimeLeft(600); // Reset to 10 minutes when closed
+      setTimeLeft(600);
     }
     return () => clearInterval(timer);
   }, [showCheckout.show, timeLeft]);
 
-  // FORMAT TIMER TO MM:SS
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -232,10 +238,24 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080C14] text-white flex flex-col">
-      <nav className="border-b border-white/5 px-4 sm:px-8 py-4 flex items-center justify-between shrink-0">
-        
-        {/* CLICKABLE LOGO TO RETURN HOME */}
+    <div className="min-h-screen bg-[#080C14] text-white flex flex-col overflow-x-hidden">
+      {/* CUSTOM CSS FOR INFINITE SLIDER */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-scroll {
+          animation: scroll 30s linear infinite;
+          display: flex;
+          width: max-content;
+        }
+        .animate-scroll:hover {
+          animation-play-state: paused;
+        }
+      `}} />
+
+      <nav className="border-b border-white/5 px-4 sm:px-8 py-4 flex items-center justify-between shrink-0 relative z-20 bg-[#080C14]">
         <button 
           onClick={() => { setShowPaywall(false); setShowSignupWall(false); setShowCheckout({show: false, amount: '', planName: '', scans: 0}); }}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
@@ -352,7 +372,7 @@ export default function Home() {
         </div>
       )}
 
-      <div className="flex-grow max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14 w-full">
+      <div className="flex-grow max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14 w-full relative z-10">
         {/* SIGNUP WALL */}
         {showSignupWall && (
           <div className="text-center py-10">
@@ -521,16 +541,28 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                <button
-                  onClick={handleUpload}
-                  disabled={!file}
-                  className={`w-full mt-4 font-semibold py-3.5 rounded-xl transition-all text-sm ${
-                    file ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white'
-                    : 'bg-white/5 text-gray-600 cursor-not-allowed'
-                  }`}
-                >
-                  {!user ? 'Analyze Free — No signup needed' : 'Analyze Statement'}
-                </button>
+                <div className="flex gap-3 mt-4">
+                  <button
+                    onClick={handleUpload}
+                    disabled={!file}
+                    className={`flex-1 font-semibold py-3.5 rounded-xl transition-all text-sm ${
+                      file ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-lg'
+                      : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                    }`}
+                  >
+                    {!user ? 'Analyze Free — No signup needed' : 'Analyze Statement'}
+                  </button>
+                  
+                  {/* CANCEL BUTTON */}
+                  {file && (
+                    <button
+                      onClick={(e) => { e.preventDefault(); setFile(null); }}
+                      className="px-6 sm:px-8 font-semibold py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white rounded-xl transition-all text-sm"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
               )}
 
               {/* SECURITY GUARANTEE */}
@@ -550,16 +582,30 @@ export default function Home() {
               )}
             </div>
 
-            {/* NEW: SUPPORTED BANKS BANNER */}
-            <div className="mt-12 text-center">
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-4">Seamlessly processes statements from</p>
-              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
-                {['HDFC', 'SBI', 'ICICI', 'Axis', 'Kotak', 'PNB', 'Bank of Baroda'].map((bank) => (
-                  <span key={bank} className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-md text-xs text-gray-400 font-medium">
-                    {bank}
-                  </span>
-                ))}
-                <span className="text-xs text-gray-500 font-medium px-2">+15 more</span>
+            {/* INFINITE MARQUEE SLIDER FOR SUPPORTED BANKS */}
+            <div className="mt-14 sm:mt-20">
+              <p className="text-center text-xs font-semibold text-gray-600 uppercase tracking-widest mb-6">Seamlessly processes statements from</p>
+              
+              <div className="relative flex overflow-hidden group">
+                {/* Left/Right fading edge masks */}
+                <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-[#080C14] to-transparent z-10 pointer-events-none"></div>
+                <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-[#080C14] to-transparent z-10 pointer-events-none"></div>
+
+                {/* The Scrolling Track */}
+                <div className="animate-scroll">
+                  {/* First set of banks */}
+                  {SUPPORTED_BANKS.map((bank, index) => (
+                    <div key={`bank-1-${index}`} className="flex items-center justify-center px-4 sm:px-8">
+                      <span className="text-sm sm:text-base font-bold text-gray-500/50 whitespace-nowrap">{bank}</span>
+                    </div>
+                  ))}
+                  {/* Second identical set of banks to make the loop seamless */}
+                  {SUPPORTED_BANKS.map((bank, index) => (
+                    <div key={`bank-2-${index}`} className="flex items-center justify-center px-4 sm:px-8">
+                      <span className="text-sm sm:text-base font-bold text-gray-500/50 whitespace-nowrap">{bank}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -608,8 +654,8 @@ export default function Home() {
         )}
       </div>
 
-      {/* NEW: PROFESSIONAL FOOTER */}
-      <footer className="border-t border-white/5 py-8 mt-auto shrink-0">
+      {/* PROFESSIONAL FOOTER */}
+      <footer className="border-t border-white/5 py-8 mt-auto shrink-0 relative z-20 bg-[#080C14]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex flex-col items-center sm:items-start">
             <div className="flex items-center gap-2 mb-2">
