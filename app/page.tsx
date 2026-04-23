@@ -4,7 +4,6 @@ import axios from 'axios'
 import { createClient } from '@supabase/supabase-js'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 
-// INJECT PREMIUM TYPOGRAPHY
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'] })
 
 const supabase = createClient(
@@ -22,17 +21,19 @@ const SUPPORTED_BANKS = [
 
 const FAQS = [
   { q: "Is it safe to upload client bank statements?", a: "Absolutely. We employ bank-grade encryption. PDFs are processed in secure memory and permanently deleted instantly after the risk score is generated. We never store financial data." },
-  { q: "What if the PDF is password protected?", a: "Currently, we support standard, unlocked digital PDFs. Support for password-protected and scanned image documents is currently in development." },
+  { q: "What if the PDF is password protected?", a: "Simply enter the password in the optional field before clicking Analyze. We use it once to unlock the file in secure memory and immediately discard it. We never save your passwords." },
   { q: "How accurate is the AI Parsing?", a: "Our proprietary AI is trained specifically on Indian banking formats, achieving 99% accuracy in detecting verified salary credits and bounced cheques." },
   { q: "Do my unused scans expire?", a: "No. Once you purchase a Pro or Business plan, your scans remain in your account indefinitely until you use them." }
 ]
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null)
+  const [pdfPassword, setPdfPassword] = useState('') // NEW: Password State
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [loadingText, setLoadingText] = useState('Connecting to secure server...')
   const [result, setResult] = useState<any>(null)
+  const [error, setError] = useState('')
   const [user, setUser] = useState<any>(null)
   const [scansUsed, setScansUsed] = useState(0)
   const [isPaid, setIsPaid] = useState(false)
@@ -40,24 +41,20 @@ export default function Home() {
   const [authLoading, setAuthLoading] = useState(true)
   const [guestScanned, setGuestScanned] = useState(false)
   
-  // MODAL & UI STATES
   const [showPaywall, setShowPaywall] = useState(false)
   const [showSignupWall, setShowSignupWall] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   
-  // TOAST NOTIFICATION STATE
   const [toast, setToast] = useState<{msg: string, type: 'error' | 'success'} | null>(null)
   
-  // CHECKOUT AND TIMER STATE
   const [showCheckout, setShowCheckout] = useState<{show: boolean, amount: string, planName: string, scans: number}>({show: false, amount: '', planName: '', scans: 0})
   const [timeLeft, setTimeLeft] = useState(600)
 
-  // CUSTOM TOAST FUNCTION
   const showToast = (msg: string, type: 'error' | 'success' = 'error') => {
     setToast({ msg, type })
-    setTimeout(() => setToast(null), 4000) // Auto-hide after 4 seconds
+    setTimeout(() => setToast(null), 4000) 
   }
 
   useEffect(() => {
@@ -124,6 +121,7 @@ export default function Home() {
       }, 600);
 
       const texts = [
+        'Unlocking document...',
         'Reading bank format...',
         'Extracting transaction history...',
         'Filtering bounced cheques...',
@@ -188,6 +186,7 @@ export default function Home() {
     setUser(null)
     setResult(null)
     setFile(null)
+    setPdfPassword('')
     setShowPaywall(false)
     setShowSignupWall(false)
   }
@@ -216,6 +215,10 @@ export default function Home() {
     try {
       const formData = new FormData()
       formData.append('file', file)
+      // NEW: Send password to the API if user typed one
+      if (pdfPassword) {
+        formData.append('password', pdfPassword)
+      }
       
       const res = await axios.post('https://credilens-api.onrender.com/upload', formData)
 
@@ -235,9 +238,10 @@ export default function Home() {
       }
 
       setResult(res.data)
+      setPdfPassword('') // Clear password after success
       showToast('Analysis complete!', 'success')
     } catch (e: any) {
-      showToast('Connection failed. Please check the PDF and try again.', 'error')
+      showToast('Connection failed or incorrect password. Please try again.', 'error')
     }
     setLoading(false)
   }
@@ -259,7 +263,6 @@ export default function Home() {
   return (
     <div className={`min-h-screen bg-[#080C14] text-white flex flex-col overflow-x-hidden ${jakarta.className}`}>
       
-      {/* CUSTOM CSS ANIMATIONS FOR MARQUEE AND TOAST */}
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes scroll {
           0% { transform: translateX(0); }
@@ -282,7 +285,6 @@ export default function Home() {
         }
       `}} />
 
-      {/* GLOBAL TOAST NOTIFICATION */}
       {toast && (
         <div className={`fixed bottom-6 right-6 z-[100] px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-slide-up border backdrop-blur-md ${
           toast.type === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
@@ -296,7 +298,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* NAVBAR */}
       <nav className="border-b border-white/5 px-4 sm:px-8 py-4 flex items-center justify-between shrink-0 relative z-20 bg-[#080C14]">
         <button 
           onClick={() => { setShowPaywall(false); setShowSignupWall(false); setShowCheckout({show: false, amount: '', planName: '', scans: 0}); }}
@@ -607,6 +608,24 @@ export default function Home() {
                     <input type="file" accept=".pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
                   </label>
 
+                  {/* NEW: OPTIONAL PASSWORD INPUT */}
+                  {file && !loading && (
+                    <div className="mt-4 animate-slide-up">
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        </div>
+                        <input
+                          type="password"
+                          placeholder="PDF Password (Leave blank if not protected)"
+                          value={pdfPassword}
+                          onChange={(e) => setPdfPassword(e.target.value)}
+                          className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm text-white placeholder-gray-500 transition-all"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {loading ? (
                     <div className="w-full mt-6 bg-[#080c14] border border-white/10 rounded-xl p-5 shadow-inner">
                       <div className="flex justify-between items-center mb-3">
@@ -623,7 +642,7 @@ export default function Home() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex gap-3 mt-6">
+                    <div className="flex gap-3 mt-4">
                       <button
                         onClick={handleUpload}
                         disabled={!file}
@@ -637,7 +656,7 @@ export default function Home() {
                       
                       {file && (
                         <button
-                          onClick={(e) => { e.preventDefault(); setFile(null); }}
+                          onClick={(e) => { e.preventDefault(); setFile(null); setPdfPassword(''); }}
                           className="px-6 sm:px-8 font-bold py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white rounded-xl transition-all text-sm tracking-wide"
                         >
                           Cancel
@@ -678,14 +697,13 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* BRAND NEW: FEATURES GRID */}
+              {/* FEATURES GRID */}
               <div className="mt-24 sm:mt-32 max-w-5xl mx-auto px-4">
                 <div className="text-center mb-12">
                   <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Underwriting on Autopilot</h2>
                   <p className="text-gray-400 text-sm sm:text-base mt-3 font-medium max-w-2xl mx-auto">Stop wasting hours with highlighters and calculators. Let our AI do the heavy lifting.</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Feature 1 */}
                   <div className="bg-[#0B101A] border border-white/5 p-6 rounded-2xl shadow-lg hover:border-blue-500/30 transition-colors">
                     <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-5 border border-blue-500/20">
                       <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
@@ -693,7 +711,6 @@ export default function Home() {
                     <h3 className="text-lg font-bold text-white mb-2 tracking-wide">AI-Powered Parsing</h3>
                     <p className="text-sm text-gray-400 font-medium leading-relaxed">Instantly extracts verified salary credits from messy, unstructured PDF bank statements.</p>
                   </div>
-                  {/* Feature 2 */}
                   <div className="bg-[#0B101A] border border-white/5 p-6 rounded-2xl shadow-lg hover:border-emerald-500/30 transition-colors">
                     <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-5 border border-emerald-500/20">
                       <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
@@ -701,7 +718,6 @@ export default function Home() {
                     <h3 className="text-lg font-bold text-white mb-2 tracking-wide">Fraud Detection</h3>
                     <p className="text-sm text-gray-400 font-medium leading-relaxed">Automatically detects and flags bounced cheques, hidden loan EMIs, and risky transactional behavior.</p>
                   </div>
-                  {/* Feature 3 */}
                   <div className="bg-[#0B101A] border border-white/5 p-6 rounded-2xl shadow-lg hover:border-purple-500/30 transition-colors">
                     <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-5 border border-purple-500/20">
                       <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -712,7 +728,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* BRAND NEW: FAQ SECTION */}
+              {/* FAQ SECTION */}
               <div className="mt-24 sm:mt-32 max-w-3xl mx-auto px-4 pb-10">
                 <div className="text-center mb-10">
                   <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Frequently Asked Questions</h2>
@@ -774,7 +790,7 @@ export default function Home() {
             </div>
 
             <button
-              onClick={() => { setResult(null); setFile(null) }}
+              onClick={() => { setResult(null); setFile(null); setPdfPassword(''); }}
               className="w-full bg-[#0B101A] hover:bg-white/5 border border-white/10 text-gray-300 hover:text-white font-bold tracking-wide py-4 rounded-xl transition-all text-sm shadow-md"
             >
               Analyze Another Statement
@@ -809,6 +825,5 @@ export default function Home() {
     </div>
   )
 }
-
 
 
