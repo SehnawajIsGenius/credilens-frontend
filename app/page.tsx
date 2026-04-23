@@ -8,16 +8,14 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// --- YOUR PAYMENT & CONTACT DETAILS ---
-const SUPPORT_EMAIL = 'akingak315@gmail.com' 
-const INSTA_STARTER = 'PASTE_YOUR_STARTER_LINK_HERE'
-const INSTA_PRO = 'PASTE_YOUR_PRO_LINK_HERE'
-const INSTA_AGENCY = 'PASTE_YOUR_AGENCY_LINK_HERE'
-// --------------------------------------
+// YOUR NEW BILLING EMAIL
+const SUPPORT_EMAIL = 'clearstatement.billing@gmail.com' 
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [loadingText, setLoadingText] = useState('Connecting to secure server...')
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState('')
   const [user, setUser] = useState<any>(null)
@@ -28,7 +26,10 @@ export default function Home() {
   const [guestScanned, setGuestScanned] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
   const [showSignupWall, setShowSignupWall] = useState(false)
-  const [showCheckout, setShowCheckout] = useState<{show: boolean, amount: string, planName: string, scans: number, link: string}>({show: false, amount: '', planName: '', scans: 0, link: ''})
+  
+  // CHECKOUT AND TIMER STATE
+  const [showCheckout, setShowCheckout] = useState<{show: boolean, amount: string, planName: string, scans: number}>({show: false, amount: '', planName: '', scans: 0})
+  const [timeLeft, setTimeLeft] = useState(600) // 600 seconds = 10 minutes
 
   useEffect(() => {
     const g = localStorage.getItem('guest_scanned')
@@ -60,6 +61,67 @@ export default function Home() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // 10-MINUTE COUNTDOWN TIMER LOGIC
+  useEffect(() => {
+    let timer: any;
+    if (showCheckout.show && timeLeft > 0) {
+      timer = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (!showCheckout.show) {
+      setTimeLeft(600); // Reset to 10 minutes when closed
+    }
+    return () => clearInterval(timer);
+  }, [showCheckout.show, timeLeft]);
+
+  // FORMAT TIMER TO MM:SS
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // FAKE PROGRESS BAR LOGIC
+  useEffect(() => {
+    let progressInterval: any;
+    let textInterval: any;
+
+    if (loading) {
+      setProgress(0);
+      setLoadingText('Connecting to secure server...');
+
+      progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 98) return 98; 
+          const inc = prev < 40 ? 3 : prev < 70 ? 1.5 : prev < 90 ? 0.5 : 0.2;
+          return prev + inc;
+        });
+      }, 600);
+
+      const texts = [
+        'Reading bank format...',
+        'Extracting transaction history...',
+        'Filtering bounced cheques...',
+        'Calculating verified income...',
+        'Running AI risk analysis...',
+        'Finalizing underwriter report...'
+      ];
+      let textIndex = 0;
+      textInterval = setInterval(() => {
+        textIndex = (textIndex + 1) % texts.length;
+        setLoadingText(texts[textIndex]);
+      }, 3500);
+
+    } else {
+      setProgress(100);
+    }
+
+    return () => {
+      clearInterval(progressInterval);
+      clearInterval(textInterval);
+    };
+  }, [loading]);
 
   const loadUser = async (u: any) => {
     const { data, error } = await supabase
@@ -151,7 +213,7 @@ export default function Home() {
 
       setResult(res.data)
     } catch (e: any) {
-      setError('Connection failed. Wait 60 seconds and try again.')
+      setError('Connection failed. Please try again.')
     }
     setLoading(false)
   }
@@ -210,54 +272,75 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* PROFESSIONAL CHECKOUT MODAL - INSTAMOJO VERSION */}
+      {/* SECURE QR CHECKOUT WITH TIMER */}
       {showCheckout.show && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-[#0f1522] border border-white/10 rounded-2xl p-6 sm:p-8 max-w-md w-full relative shadow-2xl">
             <button 
-              onClick={() => setShowCheckout({show: false, amount: '', planName: '', scans: 0, link: ''})}
+              onClick={() => setShowCheckout({show: false, amount: '', planName: '', scans: 0})}
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
             
             <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold text-white mb-1">Complete Payment</h3>
-              <p className="text-gray-400 text-sm">{showCheckout.planName} Plan • ₹{showCheckout.amount}</p>
+              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1 mb-4">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                <span className="text-xs text-emerald-400 font-medium">Secure Checkout Session</span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-1">Pay ₹{showCheckout.amount}</h3>
+              <p className="text-gray-400 text-sm">{showCheckout.planName} Plan • {showCheckout.scans} Scans</p>
             </div>
 
-            <div className="space-y-6 mb-8 text-sm text-gray-300">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs">1</div>
-                <div>
-                  <p className="mb-3">Pay securely via Instamojo (UPI, Credit Card, or Netbanking).</p>
-                  <a 
-                    href={showCheckout.link} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-5 rounded-lg transition-all"
-                  >
-                    Pay ₹{showCheckout.amount} on Instamojo
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                  </a>
+            {timeLeft > 0 ? (
+              <>
+                <div className="flex flex-col items-center mb-6">
+                  <div className="bg-white p-3 rounded-2xl shadow-inner mb-4 relative">
+                    <img src="/qr.png" alt="UPI QR Code" className="w-48 h-48 object-cover rounded-lg" />
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-4 py-2 rounded-lg border border-rose-400/20">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span className="text-sm font-medium">QR Expires in: </span>
+                    <span className="text-lg font-bold font-mono">{formatTime(timeLeft)}</span>
+                  </div>
                 </div>
+
+                <div className="space-y-4 mb-6 text-sm text-gray-300 bg-white/5 p-4 rounded-xl border border-white/10">
+                  <p className="flex items-start gap-2">
+                    <span className="text-blue-400 font-bold">1.</span> Scan with GPay, PhonePe, or Paytm.
+                  </p>
+                  <p className="flex items-start gap-2">
+                    <span className="text-blue-400 font-bold">2.</span> Take a screenshot of the successful payment.
+                  </p>
+                  <p className="flex items-start gap-2">
+                    <span className="text-blue-400 font-bold">3.</span> Email us the screenshot to instantly unlock.
+                  </p>
+                </div>
+                
+                <a 
+                  href={`mailto:${SUPPORT_EMAIL}?subject=Payment%20Confirmation%20-%20${showCheckout.planName}%20Plan&body=Hello%20ClearStatement%20Billing%20Team,%0A%0AI%20have%20completed%20the%20payment%20of%20Rs%20${showCheckout.amount}%20for%20the%20${showCheckout.planName}%20Plan%20(${showCheckout.scans}%20scans).%0A%0AMy%20account%20email%20is:%20${user?.email}%0A%0A[PLEASE ATTACH YOUR PAYMENT SCREENSHOT HERE]%0A%0AThank%20you.`}
+                  className="flex items-center justify-center gap-2 w-full bg-white text-gray-900 hover:bg-gray-100 font-semibold py-3.5 rounded-xl transition-all shadow-lg"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                  Email Screenshot to Unlock
+                </a>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
+                  <svg className="w-8 h-8 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h4 className="text-xl font-bold text-white mb-2">Session Expired</h4>
+                <p className="text-gray-400 text-sm mb-6">Your payment session has timed out for security reasons.</p>
+                <button 
+                  onClick={() => setTimeLeft(600)}
+                  className="bg-white/10 hover:bg-white/15 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all"
+                >
+                  Generate New QR Code
+                </button>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs">2</div>
-                <p>After successful payment, click the button below to email us your payment confirmation so we can instantly unlock your account.</p>
-              </div>
-            </div>
-            
-            <a 
-              href={`mailto:${SUPPORT_EMAIL}?subject=Payment%20Confirmation%20-%20${showCheckout.planName}%20Plan&body=Hello%20ClearStatement%20Billing%20Team,%0A%0AI%20have%20completed%20the%20payment%20of%20Rs%20${showCheckout.amount}%20on%20Instamojo%20for%20the%20${showCheckout.planName}%20Plan%20(${showCheckout.scans}%20scans).%0A%0AMy%20account%20email%20is:%20${user?.email}%0A%0A[PLEASE ATTACH YOUR PAYMENT SCREENSHOT HERE]%0A%0AThank%20you.`}
-              className="flex items-center justify-center gap-2 w-full bg-white text-gray-900 hover:bg-gray-100 font-semibold py-3.5 rounded-xl transition-all shadow-lg"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-              Email Us the Confirmation
-            </a>
-            <p className="text-center text-gray-500 text-xs mt-4">
-              Your account will be credited within 10-15 minutes of verification.
-            </p>
+            )}
           </div>
         </div>
       )}
@@ -305,7 +388,7 @@ export default function Home() {
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Standard Support</li>
                 </ul>
                 <button
-                  onClick={() => setShowCheckout({show: true, amount: '299', planName: 'Starter', scans: 5, link: INSTA_STARTER})}
+                  onClick={() => setShowCheckout({show: true, amount: '299', planName: 'Starter', scans: 5})}
                   className="w-full bg-white/10 hover:bg-white/15 border border-white/10 text-white font-semibold py-3 rounded-xl transition-all"
                 >
                   Get Starter
@@ -324,7 +407,7 @@ export default function Home() {
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Priority Processing</li>
                 </ul>
                 <button
-                  onClick={() => setShowCheckout({show: true, amount: '599', planName: 'Pro', scans: 15, link: INSTA_PRO})}
+                  onClick={() => setShowCheckout({show: true, amount: '599', planName: 'Pro', scans: 15})}
                   className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold py-3 rounded-xl transition-all"
                 >
                   Get Pro
@@ -342,7 +425,7 @@ export default function Home() {
                   <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Direct Founder Support</li>
                 </ul>
                 <button
-                  onClick={() => setShowCheckout({show: true, amount: '999', planName: 'Business', scans: 40, link: INSTA_AGENCY})}
+                  onClick={() => setShowCheckout({show: true, amount: '999', planName: 'Business', scans: 40})}
                   className="w-full bg-white/10 hover:bg-white/15 border border-white/10 text-white font-semibold py-3 rounded-xl transition-all"
                 >
                   Get Business
@@ -417,17 +500,31 @@ export default function Home() {
                 <input type="file" accept=".pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
               </label>
 
-              <button
-                onClick={handleUpload}
-                disabled={!file || loading}
-                className={`w-full mt-4 font-semibold py-3.5 rounded-xl transition-all text-sm ${
-                  loading ? 'bg-blue-600/50 text-blue-300 cursor-not-allowed'
-                  : file ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white'
-                  : 'bg-white/5 text-gray-600 cursor-not-allowed'
-                }`}
-              >
-                {loading ? 'Analyzing Statement...' : !user ? 'Analyze Free — No signup needed' : 'Analyze Statement'}
-              </button>
+              {loading ? (
+                <div className="w-full mt-4 bg-white/5 border border-white/10 rounded-xl p-5">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm text-blue-400 font-medium animate-pulse">{loadingText}</span>
+                    <span className="text-sm text-gray-400 font-mono">{Math.round(progress)}%</span>
+                  </div>
+                  <div className="w-full bg-black/50 rounded-full h-2.5 overflow-hidden">
+                    <div 
+                      className="bg-gradient-to-r from-blue-600 to-emerald-400 h-2.5 rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={handleUpload}
+                  disabled={!file}
+                  className={`w-full mt-4 font-semibold py-3.5 rounded-xl transition-all text-sm ${
+                    file ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white'
+                    : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                  }`}
+                >
+                  {!user ? 'Analyze Free — No signup needed' : 'Analyze Statement'}
+                </button>
+              )}
 
               {error && (
                 <div className="mt-4 bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3">
