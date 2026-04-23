@@ -16,9 +16,10 @@ export const metadata = {
   title: 'ClearStatement | AI Bank Statement Analyzer',
   description: 'Verify income in 8 seconds',
   icons: {
-    icon: '/icon.png',
+    icon: '/brand-logo.png?v=2',
   },
 }
+
 
 export default function RootLayout({
   children,
