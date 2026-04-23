@@ -232,8 +232,8 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[#080C14] text-white">
-      <nav className="border-b border-white/5 px-4 sm:px-8 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-[#080C14] text-white flex flex-col">
+      <nav className="border-b border-white/5 px-4 sm:px-8 py-4 flex items-center justify-between shrink-0">
         
         {/* CLICKABLE LOGO TO RETURN HOME */}
         <button 
@@ -352,7 +352,7 @@ export default function Home() {
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+      <div className="flex-grow max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14 w-full">
         {/* SIGNUP WALL */}
         {showSignupWall && (
           <div className="text-center py-10">
@@ -500,7 +500,7 @@ export default function Home() {
                         </svg>
                       </div>
                       <p className="text-gray-300 text-sm font-medium mb-1">Drop bank statement PDF here</p>
-                      <p className="text-gray-600 text-xs">HDFC, SBI, ICICI, Axis, Kotak and more</p>
+                      <p className="text-gray-600 text-xs">Supports PDF statements up to 10MB</p>
                     </>
                   )}
                 </div>
@@ -533,7 +533,7 @@ export default function Home() {
                 </button>
               )}
 
-              {/* THE NEW SECURITY GUARANTEE */}
+              {/* SECURITY GUARANTEE */}
               <div className="mt-5 flex items-start sm:items-center justify-center gap-2 text-center sm:text-left px-2">
                 <svg className="w-4 h-4 text-emerald-500/80 shrink-0 mt-0.5 sm:mt-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -549,6 +549,20 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            {/* NEW: SUPPORTED BANKS BANNER */}
+            <div className="mt-12 text-center">
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-4">Seamlessly processes statements from</p>
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
+                {['HDFC', 'SBI', 'ICICI', 'Axis', 'Kotak', 'PNB', 'Bank of Baroda'].map((bank) => (
+                  <span key={bank} className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-md text-xs text-gray-400 font-medium">
+                    {bank}
+                  </span>
+                ))}
+                <span className="text-xs text-gray-500 font-medium px-2">+15 more</span>
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -593,6 +607,32 @@ export default function Home() {
           </div>
         )}
       </div>
-    </main>
+
+      {/* NEW: PROFESSIONAL FOOTER */}
+      <footer className="border-t border-white/5 py-8 mt-auto shrink-0">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col items-center sm:items-start">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-5 h-5 rounded bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              </div>
+              <span className="text-gray-300 font-medium text-sm">ClearStatement</span>
+            </div>
+            <p className="text-xs text-gray-600">© 2026 ClearStatement. All rights reserved.</p>
+          </div>
+          
+          <div className="flex items-center gap-6 text-xs text-gray-500">
+            <button className="hover:text-gray-300 transition-colors">Privacy Policy</button>
+            <button className="hover:text-gray-300 transition-colors">Terms of Service</button>
+            <button className="hover:text-gray-300 transition-colors">Support</button>
+          </div>
+          
+          <div className="text-xs text-gray-600">
+            Engineered by <span className="text-blue-400/80 font-medium">TheArise</span>
+          </div>
+        </div>
+      </footer>
+
+    </div>
   )
 }
