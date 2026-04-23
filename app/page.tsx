@@ -28,7 +28,7 @@ const FAQS = [
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null)
-  const [pdfPassword, setPdfPassword] = useState('') // NEW: Password State
+  const [pdfPassword, setPdfPassword] = useState('') 
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [loadingText, setLoadingText] = useState('Connecting to secure server...')
@@ -215,12 +215,16 @@ export default function Home() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      // NEW: Send password to the API if user typed one
       if (pdfPassword) {
         formData.append('password', pdfPassword)
       }
       
       const res = await axios.post('https://credilens-api.onrender.com/upload', formData)
+
+      // THE FIX: We now intercept backend errors!
+      if (res.data.error) {
+        throw new Error(res.data.error)
+      }
 
       if (!user) {
         localStorage.setItem('guest_scanned', 'true')
@@ -238,10 +242,18 @@ export default function Home() {
       }
 
       setResult(res.data)
-      setPdfPassword('') // Clear password after success
+      setPdfPassword('') 
       showToast('Analysis complete!', 'success')
     } catch (e: any) {
-      showToast('Connection failed or incorrect password. Please try again.', 'error')
+      // THE FIX: If there's an error, it correctly shows the toast and DOES NOT show the result section.
+      const errorMsg = e.response?.data?.error || e.message || 'Connection failed.'
+      if (errorMsg.toLowerCase().includes('password')) {
+        showToast('Incorrect PDF password. Please try again.', 'error')
+      } else if (errorMsg.toLowerCase().includes('empty') || errorMsg.toLowerCase().includes('text')) {
+        showToast('Could not read PDF. Make sure it is not a scanned image.', 'error')
+      } else {
+        showToast('Failed to analyze document. Please check the file.', 'error')
+      }
     }
     setLoading(false)
   }
@@ -608,7 +620,6 @@ export default function Home() {
                     <input type="file" accept=".pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
                   </label>
 
-                  {/* NEW: OPTIONAL PASSWORD INPUT */}
                   {file && !loading && (
                     <div className="mt-4 animate-slide-up">
                       <div className="relative">
@@ -757,8 +768,8 @@ export default function Home() {
           </>
         )}
 
-        {/* RESULTS */}
-        {result && (
+        {/* RESULTS WITH FALLBACKS */}
+        {result && !result.error && (
           <div className="max-w-3xl mx-auto mt-8">
             <div className="flex items-start sm:items-center justify-between mb-6 gap-3">
               <div>
@@ -766,20 +777,20 @@ export default function Home() {
                 <p className="text-gray-500 text-xs sm:text-sm mt-1 font-medium">AI-verified financial summary</p>
               </div>
               <span className={`text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-lg border shrink-0 shadow-sm ${
-                result.risk_score >= 7 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                : result.risk_score >= 4 ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                (result.risk_score || 0) >= 7 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                : (result.risk_score || 0) >= 4 ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
                 : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
               }`}>
-                {getRiskLabel(result.risk_score)}
+                {getRiskLabel(result.risk_score || 10)}
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
               {[
-                { label: 'Monthly Income', value: `₹${result.verified_monthly_salary?.toLocaleString('en-IN')}`, sub: 'Verified salary credits', color: 'text-emerald-400' },
-                { label: 'Risk Score', value: `${result.risk_score}/10`, sub: getRiskLabel(result.risk_score), color: getRiskColor(result.risk_score) },
-                { label: 'Bounced Cheques', value: String(result.bounced_cheque_count), sub: result.bounced_cheque_count === 0 ? 'No bounces detected' : 'Bounces found', color: result.bounced_cheque_count === 0 ? 'text-emerald-400' : 'text-rose-400' },
-                { label: 'Monthly EMI', value: `₹${result.total_emi?.toLocaleString('en-IN')}`, sub: 'Total loan obligations', color: 'text-white' },
+                { label: 'Monthly Income', value: `₹${(result.verified_monthly_salary || 0).toLocaleString('en-IN')}`, sub: 'Verified salary credits', color: 'text-emerald-400' },
+                { label: 'Risk Score', value: `${result.risk_score || 0}/10`, sub: getRiskLabel(result.risk_score || 10), color: getRiskColor(result.risk_score || 10) },
+                { label: 'Bounced Cheques', value: String(result.bounced_cheque_count || 0), sub: (result.bounced_cheque_count || 0) === 0 ? 'No bounces detected' : 'Bounces found', color: (result.bounced_cheque_count || 0) === 0 ? 'text-emerald-400' : 'text-rose-400' },
+                { label: 'Monthly EMI', value: `₹${(result.total_emi || 0).toLocaleString('en-IN')}`, sub: 'Total loan obligations', color: 'text-white' },
               ].map((item) => (
                 <div key={item.label} className="bg-[#0B101A] border border-white/5 rounded-2xl p-6 sm:p-8 shadow-xl">
                   <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">{item.label}</p>
