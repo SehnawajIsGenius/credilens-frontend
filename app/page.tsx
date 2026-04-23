@@ -10,7 +10,6 @@ const supabase = createClient(
 
 const SUPPORT_EMAIL = 'clearstatement.billing@gmail.com' 
 
-// List of banks for the infinite slider
 const SUPPORTED_BANKS = [
   'HDFC Bank', 'State Bank of India', 'ICICI Bank', 'Axis Bank', 
   'Kotak Mahindra', 'Punjab National Bank', 'Bank of Baroda', 
@@ -30,8 +29,12 @@ export default function Home() {
   const [scansLeft, setScansLeft] = useState(0)
   const [authLoading, setAuthLoading] = useState(true)
   const [guestScanned, setGuestScanned] = useState(false)
+  
+  // MODAL STATES
   const [showPaywall, setShowPaywall] = useState(false)
   const [showSignupWall, setShowSignupWall] = useState(false)
+  const [showPrivacy, setShowPrivacy] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
   
   // CHECKOUT AND TIMER STATE
   const [showCheckout, setShowCheckout] = useState<{show: boolean, amount: string, planName: string, scans: number}>({show: false, amount: '', planName: '', scans: 0})
@@ -239,14 +242,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#080C14] text-white flex flex-col overflow-x-hidden">
-      {/* CUSTOM CSS FOR INFINITE SLIDER */}
+      {/* SLOWED DOWN CSS FOR INFINITE SLIDER */}
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes scroll {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
         .animate-scroll {
-          animation: scroll 30s linear infinite;
+          animation: scroll 50s linear infinite;
           display: flex;
           width: max-content;
         }
@@ -296,6 +299,44 @@ export default function Home() {
           )}
         </div>
       </nav>
+
+      {/* PRIVACY POLICY MODAL */}
+      {showPrivacy && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0f1522] border border-white/10 rounded-2xl p-6 sm:p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto relative shadow-2xl">
+            <button onClick={() => setShowPrivacy(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h3 className="text-2xl font-bold text-white mb-6">Privacy Policy</h3>
+            <div className="text-gray-300 text-sm space-y-4">
+              <p><strong>1. Data Security:</strong> ClearStatement employs bank-grade encryption to process your documents. We do not store, sell, or share your financial data.</p>
+              <p><strong>2. Document Handling:</strong> Uploaded bank statement PDFs are held in temporary memory strictly for the duration of the AI analysis (typically under 10 seconds). They are permanently and irreversibly destroyed immediately after the risk score is generated.</p>
+              <p><strong>3. Authentication:</strong> We use secure OAuth via Google. We only access your basic profile information (email, name) to provide core account functionality and scan tracking.</p>
+              <p><strong>4. Contact:</strong> For detailed privacy inquiries, please reach out to our team via the Support link.</p>
+            </div>
+            <button onClick={() => setShowPrivacy(false)} className="mt-8 w-full bg-white/10 hover:bg-white/15 text-white py-3 rounded-xl font-medium transition-all">Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* TERMS OF SERVICE MODAL */}
+      {showTerms && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0f1522] border border-white/10 rounded-2xl p-6 sm:p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto relative shadow-2xl">
+            <button onClick={() => setShowTerms(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h3 className="text-2xl font-bold text-white mb-6">Terms of Service</h3>
+            <div className="text-gray-300 text-sm space-y-4">
+              <p><strong>1. Service Usage:</strong> ClearStatement provides AI-driven financial analysis to assist in underwriter risk assessment. The results are algorithmic estimates and should not be used as the sole basis for lending decisions.</p>
+              <p><strong>2. Accuracy:</strong> While our parsing models are highly accurate, users are responsible for verifying final figures. ClearStatement is not liable for financial losses incurred due to discrepancies in risk scoring.</p>
+              <p><strong>3. Payments & Subscriptions:</strong> All scan packages are non-refundable once utilized. Account credits do not expire unless explicitly stated in the selected tier.</p>
+              <p><strong>4. Fair Use:</strong> Automated scraping or API abuse is strictly prohibited and will result in immediate account termination without refund.</p>
+            </div>
+            <button onClick={() => setShowTerms(false)} className="mt-8 w-full bg-white/10 hover:bg-white/15 text-white py-3 rounded-xl font-medium transition-all">Close</button>
+          </div>
+        </div>
+      )}
 
       {/* SECURE QR CHECKOUT WITH TIMER */}
       {showCheckout.show && (
@@ -587,19 +628,15 @@ export default function Home() {
               <p className="text-center text-xs font-semibold text-gray-600 uppercase tracking-widest mb-6">Seamlessly processes statements from</p>
               
               <div className="relative flex overflow-hidden group">
-                {/* Left/Right fading edge masks */}
                 <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-[#080C14] to-transparent z-10 pointer-events-none"></div>
                 <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-[#080C14] to-transparent z-10 pointer-events-none"></div>
 
-                {/* The Scrolling Track */}
                 <div className="animate-scroll">
-                  {/* First set of banks */}
                   {SUPPORTED_BANKS.map((bank, index) => (
                     <div key={`bank-1-${index}`} className="flex items-center justify-center px-4 sm:px-8">
                       <span className="text-sm sm:text-base font-bold text-gray-500/50 whitespace-nowrap">{bank}</span>
                     </div>
                   ))}
-                  {/* Second identical set of banks to make the loop seamless */}
                   {SUPPORTED_BANKS.map((bank, index) => (
                     <div key={`bank-2-${index}`} className="flex items-center justify-center px-4 sm:px-8">
                       <span className="text-sm sm:text-base font-bold text-gray-500/50 whitespace-nowrap">{bank}</span>
@@ -654,7 +691,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* PROFESSIONAL FOOTER */}
+      {/* PROFESSIONAL FOOTER WITH FUNCTIONAL LINKS */}
       <footer className="border-t border-white/5 py-8 mt-auto shrink-0 relative z-20 bg-[#080C14]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex flex-col items-center sm:items-start">
@@ -668,9 +705,9 @@ export default function Home() {
           </div>
           
           <div className="flex items-center gap-6 text-xs text-gray-500">
-            <button className="hover:text-gray-300 transition-colors">Privacy Policy</button>
-            <button className="hover:text-gray-300 transition-colors">Terms of Service</button>
-            <button className="hover:text-gray-300 transition-colors">Support</button>
+            <button onClick={() => setShowPrivacy(true)} className="hover:text-gray-300 transition-colors">Privacy Policy</button>
+            <button onClick={() => setShowTerms(true)} className="hover:text-gray-300 transition-colors">Terms of Service</button>
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-gray-300 transition-colors">Support</a>
           </div>
           
           <div className="text-xs text-gray-600">
