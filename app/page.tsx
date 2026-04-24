@@ -33,7 +33,6 @@ export default function Home() {
   const [progress, setProgress] = useState(0)
   const [loadingText, setLoadingText] = useState('Connecting to secure server...')
   const [result, setResult] = useState<any>(null)
-  const [error, setError] = useState('')
   const [user, setUser] = useState<any>(null)
   const [scansUsed, setScansUsed] = useState(0)
   const [isPaid, setIsPaid] = useState(false)
@@ -48,13 +47,23 @@ export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   
   const [toast, setToast] = useState<{msg: string, type: 'error' | 'success'} | null>(null)
-  
   const [showCheckout, setShowCheckout] = useState<{show: boolean, amount: string, planName: string, scans: number}>({show: false, amount: '', planName: '', scans: 0})
   const [timeLeft, setTimeLeft] = useState(600)
 
   const showToast = (msg: string, type: 'error' | 'success' = 'error') => {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 4000) 
+  }
+
+  // LOGO CLICK HANDLER (WORKS AS HOME BUTTON)
+  const goHome = () => {
+    setShowPaywall(false)
+    setShowSignupWall(false)
+    setShowCheckout({show: false, amount: '', planName: '', scans: 0})
+    setResult(null)
+    setFile(null)
+    setPdfPassword('')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   useEffect(() => {
@@ -183,12 +192,7 @@ export default function Home() {
 
   const signOut = async () => {
     await supabase.auth.signOut()
-    setUser(null)
-    setResult(null)
-    setFile(null)
-    setPdfPassword('')
-    setShowPaywall(false)
-    setShowSignupWall(false)
+    goHome()
   }
 
   const handleUpload = async () => {
@@ -221,7 +225,6 @@ export default function Home() {
       
       const res = await axios.post('https://credilens-api.onrender.com/upload', formData)
 
-      // THE FIX: We now intercept backend errors!
       if (res.data.error) {
         throw new Error(res.data.error)
       }
@@ -245,594 +248,361 @@ export default function Home() {
       setPdfPassword('') 
       showToast('Analysis complete!', 'success')
     } catch (e: any) {
-      // THE FIX: If there's an error, it correctly shows the toast and DOES NOT show the result section.
       const errorMsg = e.response?.data?.error || e.message || 'Connection failed.'
       if (errorMsg.toLowerCase().includes('password')) {
         showToast('Incorrect PDF password. Please try again.', 'error')
-      } else if (errorMsg.toLowerCase().includes('empty') || errorMsg.toLowerCase().includes('text')) {
-        showToast('Could not read PDF. Make sure it is not a scanned image.', 'error')
       } else {
-        showToast('Failed to analyze document. Please check the file.', 'error')
+        showToast(errorMsg, 'error')
       }
+      setResult(null)
     }
     setLoading(false)
   }
 
   const getRiskColor = (s: number) =>
-    s >= 7 ? 'text-emerald-400' : s >= 4 ? 'text-amber-400' : 'text-rose-400'
+    s >= 7 ? 'text-[#3ECF8E]' : s >= 4 ? 'text-[#F9C513]' : 'text-[#FF5A5F]'
   
   const getRiskLabel = (s: number) =>
     s >= 7 ? 'Low Risk' : s >= 4 ? 'Medium Risk' : 'High Risk'
 
   if (authLoading) {
     return (
-      <main className="min-h-screen bg-[#080C14] flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      <main className="min-h-screen bg-[#000000] flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-[#3ECF8E] border-t-transparent rounded-full animate-spin"></div>
       </main>
     )
   }
 
   return (
-    <div className={`min-h-screen bg-[#080C14] text-white flex flex-col overflow-x-hidden ${jakarta.className}`}>
+    <div className={`min-h-screen bg-[#000000] text-white flex flex-col overflow-x-hidden ${jakarta.className}`}>
       
+      {/* GLOBAL CSS FOR SUPABASE-STYLE GRID AND SCROLL */}
       <style dangerouslySetInnerHTML={{__html: `
+        ::selection { background: #3ECF8E; color: #000; }
+        .bg-grid-pattern {
+          background-size: 40px 40px;
+          background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        }
         @keyframes scroll {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
         .animate-scroll {
-          animation: scroll 50s linear infinite;
+          animation: scroll 40s linear infinite;
           display: flex;
           width: max-content;
         }
-        .animate-scroll:hover {
-          animation-play-state: paused;
-        }
-        @keyframes slide-up {
-          0% { transform: translateY(100%); opacity: 0; }
-          100% { transform: translateY(0); opacity: 1; }
-        }
-        .animate-slide-up {
-          animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        .animate-scroll:hover { animation-play-state: paused; }
+        .glass-panel {
+          background: rgba(26, 26, 26, 0.6);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
       `}} />
 
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-[100] px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-slide-up border backdrop-blur-md ${
-          toast.type === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-        }`}>
-          {toast.type === 'error' ? (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          ) : (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-          )}
-          <p className="text-sm font-semibold tracking-wide">{toast.msg}</p>
+        <div className="fixed bottom-6 right-6 z-[100] px-5 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-up glass-panel border-l-4" style={{ borderLeftColor: toast.type === 'error' ? '#FF5A5F' : '#3ECF8E' }}>
+          <p className="text-sm font-semibold tracking-wide text-white">{toast.msg}</p>
         </div>
       )}
 
-      <nav className="border-b border-white/5 px-4 sm:px-8 py-4 flex items-center justify-between shrink-0 relative z-20 bg-[#080C14]">
+      {/* TOP NAVIGATION */}
+      <nav className="sticky top-0 z-50 glass-panel px-4 sm:px-8 py-4 flex items-center justify-between shrink-0">
         <button 
-          onClick={() => { setShowPaywall(false); setShowSignupWall(false); setShowCheckout({show: false, amount: '', planName: '', scans: 0}); }}
+          onClick={goHome}
           className="flex items-center gap-3 hover:opacity-80 transition-opacity"
         >
-          <img src="/logo.png" alt="ClearStatement Logo" className="w-8 h-8 rounded-lg object-contain shrink-0" />
-          <span className="font-extrabold tracking-tight text-lg sm:text-xl text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+          <img src="/logo.png" alt="ClearStatement Logo" className="w-7 h-7 rounded object-contain shrink-0" />
+          <span className="font-bold tracking-tight text-lg text-white">
             ClearStatement
           </span>
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {user ? (
             <>
               {!isPaid && scansLeft > 0 && (
-                <span className="text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full hidden sm:block font-medium">
-                  {scansLeft} free scan{scansLeft > 1 ? 's' : ''} left
+                <span className="text-xs text-[#F9C513] font-medium hidden sm:block">
+                  {scansLeft} free scan{scansLeft > 1 ? 's' : ''}
                 </span>
               )}
               {isPaid && (
-                <span className="text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-3 py-1 rounded-full hidden sm:block font-medium">
-                  {scansLeft} scans remaining
+                <span className="text-xs text-[#3ECF8E] font-medium hidden sm:block">
+                  {scansLeft} scans left
                 </span>
               )}
-              <img src={user.user_metadata?.avatar_url} className="w-7 h-7 rounded-full" alt="" />
-              <button onClick={signOut} className="text-xs text-gray-500 hover:text-white transition-colors font-semibold tracking-wide">
+              <img src={user.user_metadata?.avatar_url} className="w-7 h-7 rounded-full border border-white/20" alt="Profile" />
+              <button onClick={signOut} className="text-xs text-gray-400 hover:text-white transition-colors font-medium">
                 Sign out
               </button>
             </>
           ) : (
             <button
               onClick={signInWithGoogle}
-              className="text-xs text-white bg-white/10 hover:bg-white/15 border border-white/10 px-4 py-2 rounded-lg font-semibold transition-all tracking-wide"
+              className="text-xs bg-[#3ECF8E] text-black hover:bg-[#32a873] px-4 py-2 rounded font-bold transition-all"
             >
-              Sign in
+              Start building
             </button>
           )}
         </div>
       </nav>
 
-      {/* PRIVACY MODAL */}
-      {showPrivacy && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#0f1522] border border-white/10 rounded-2xl p-6 sm:p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto relative shadow-2xl">
-            <button onClick={() => setShowPrivacy(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-            <h3 className="text-2xl font-bold text-white mb-6">Privacy Policy</h3>
-            <div className="text-gray-300 text-sm space-y-4">
-              <p><strong>1. Data Security:</strong> ClearStatement employs bank-grade encryption to process your documents. We do not store, sell, or share your financial data.</p>
-              <p><strong>2. Document Handling:</strong> Uploaded bank statement PDFs are held in temporary memory strictly for the duration of the AI analysis (typically under 10 seconds). They are permanently and irreversibly destroyed immediately after the risk score is generated.</p>
-              <p><strong>3. Authentication:</strong> We use secure OAuth via Google. We only access your basic profile information (email, name) to provide core account functionality and scan tracking.</p>
-              <p><strong>4. Contact:</strong> For detailed privacy inquiries, please reach out to our team via the Support link.</p>
-            </div>
-            <button onClick={() => setShowPrivacy(false)} className="mt-8 w-full bg-white/10 hover:bg-white/15 text-white py-3 rounded-xl font-bold transition-all tracking-wide">Close</button>
-          </div>
-        </div>
-      )}
+      {/* BACKGROUND GRID */}
+      <div className="absolute inset-0 z-0 pointer-events-none bg-grid-pattern opacity-30" style={{ maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)' }}></div>
 
-      {/* TERMS MODAL */}
-      {showTerms && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#0f1522] border border-white/10 rounded-2xl p-6 sm:p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto relative shadow-2xl">
-            <button onClick={() => setShowTerms(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-            <h3 className="text-2xl font-bold text-white mb-6">Terms of Service</h3>
-            <div className="text-gray-300 text-sm space-y-4">
-              <p><strong>1. Service Usage:</strong> ClearStatement provides AI-driven financial analysis to assist in underwriter risk assessment. The results are algorithmic estimates and should not be used as the sole basis for lending decisions.</p>
-              <p><strong>2. Accuracy:</strong> While our parsing models are highly accurate, users are responsible for verifying final figures. ClearStatement is not liable for financial losses incurred due to discrepancies in risk scoring.</p>
-              <p><strong>3. Payments & Subscriptions:</strong> All scan packages are non-refundable once utilized. Account credits do not expire unless explicitly stated in the selected tier.</p>
-              <p><strong>4. Fair Use:</strong> Automated scraping or API abuse is strictly prohibited and will result in immediate account termination without refund.</p>
-            </div>
-            <button onClick={() => setShowTerms(false)} className="mt-8 w-full bg-white/10 hover:bg-white/15 text-white py-3 rounded-xl font-bold transition-all tracking-wide">Close</button>
-          </div>
-        </div>
-      )}
-
-      {/* CHECKOUT MODAL */}
-      {showCheckout.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#0f1522] border border-white/10 rounded-2xl p-6 sm:p-8 max-w-md w-full relative shadow-2xl">
-            <button 
-              onClick={() => setShowCheckout({show: false, amount: '', planName: '', scans: 0})}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-            
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1 mb-4">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                <span className="text-xs text-emerald-400 font-bold tracking-wide">Secure Checkout Session</span>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-1">Pay ₹{showCheckout.amount}</h3>
-              <p className="text-gray-400 text-sm font-medium">{showCheckout.planName} Plan • {showCheckout.scans} Scans</p>
-            </div>
-
-            {timeLeft > 0 ? (
-              <>
-                <div className="flex flex-col items-center mb-6">
-                  <div className="bg-white p-3 rounded-2xl shadow-inner mb-4 relative">
-                    <img src="/qr.png" alt="UPI QR Code" className="w-48 h-48 object-cover rounded-lg" />
-                  </div>
-                  
-                  <div className="flex items-center gap-2 text-rose-400 bg-rose-400/10 px-4 py-2 rounded-lg border border-rose-400/20">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span className="text-sm font-semibold">QR Expires in: </span>
-                    <span className="text-lg font-bold font-mono tracking-widest">{formatTime(timeLeft)}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-4 mb-6 text-sm text-gray-300 bg-white/5 p-4 rounded-xl border border-white/10 font-medium">
-                  <p className="flex items-start gap-2">
-                    <span className="text-blue-400 font-bold">1.</span> Scan with GPay, PhonePe, or Paytm.
-                  </p>
-                  <p className="flex items-start gap-2">
-                    <span className="text-blue-400 font-bold">2.</span> Take a screenshot of the successful payment.
-                  </p>
-                  <p className="flex items-start gap-2">
-                    <span className="text-blue-400 font-bold">3.</span> Email us the screenshot to instantly unlock.
-                  </p>
-                </div>
-                
-                <a 
-                  href={`https://mail.google.com/mail/?view=cm&fs=1&to=${SUPPORT_EMAIL}&su=Payment%20Confirmation%20-%20${showCheckout.planName}%20Plan&body=Hello%20ClearStatement%20Billing%20Team,%0A%0AI%20have%20completed%20the%20payment%20of%20Rs%20${showCheckout.amount}%20for%20the%20${showCheckout.planName}%20Plan%20(${showCheckout.scans}%20scans).%0A%0AMy%20account%20email%20is:%20${user?.email}%0A%0A[PLEASE ATTACH YOUR PAYMENT SCREENSHOT HERE]%0A%0AThank%20you.`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-2 w-full bg-white text-gray-900 hover:bg-gray-100 font-bold py-3.5 rounded-xl transition-all shadow-lg tracking-wide"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                  Email Screenshot via Gmail
-                </a>
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
-                  <svg className="w-8 h-8 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <h4 className="text-xl font-bold text-white mb-2 tracking-tight">Session Expired</h4>
-                <p className="text-gray-400 text-sm mb-6 font-medium">Your payment session has timed out for security reasons.</p>
-                <button 
-                  onClick={() => setTimeLeft(600)}
-                  className="bg-white/10 hover:bg-white/15 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all tracking-wide"
-                >
-                  Generate New QR Code
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="flex-grow max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14 w-full relative z-10">
+      <div className="flex-grow max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24 w-full relative z-10 flex flex-col items-center">
         
-        {/* SIGNUP WALL */}
-        {showSignupWall && (
-          <div className="text-center py-10">
-            <div className="w-16 h-16 rounded-full bg-blue-500/15 flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Get 2 more free scans</h2>
-            <p className="text-gray-400 text-sm mb-8 max-w-sm mx-auto font-medium">
-              You used your 1 guest scan. Sign in with Google to unlock 2 more free scans — no credit card needed.
-            </p>
-            <button
-              onClick={signInWithGoogle}
-              className="inline-flex items-center gap-3 bg-white text-gray-900 font-bold px-6 py-3 rounded-xl hover:bg-gray-100 transition-all shadow-lg mx-auto mb-4 tracking-wide"
-            >
-              Continue with Google — Free
-            </button>
-          </div>
-        )}
-
-        {/* PAYWALL */}
-        {showPaywall && (
-          <div className="py-6">
-            <div className="text-center mb-10">
-              <h2 className="text-3xl font-extrabold text-white mb-2 tracking-tight">Upgrade Your Workspace</h2>
-              <p className="text-gray-400 text-sm font-medium">Choose the plan that fits your volume.</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              <div className="bg-white/3 border border-white/10 rounded-2xl p-6 flex flex-col">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Starter</p>
-                <p className="text-3xl font-extrabold text-white mb-1">₹299</p>
-                <p className="text-gray-400 text-sm font-medium mb-6 pb-6 border-b border-white/5">10 Scans</p>
-                <ul className="text-sm font-medium text-gray-400 space-y-3 mb-8 flex-grow">
-                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>10 statement analyses</li>
-                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>No expiration date</li>
-                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Standard Support</li>
-                </ul>
-                <button
-                  onClick={() => setShowCheckout({show: true, amount: '299', planName: 'Starter', scans: 10})}
-                  className="w-full bg-white/10 hover:bg-white/15 border border-white/10 text-white font-bold py-3 rounded-xl transition-all tracking-wide"
-                >
-                  Get Starter
-                </button>
-              </div>
-
-              <div className="bg-blue-500/10 border-2 border-blue-500/40 rounded-2xl p-6 relative flex flex-col transform sm:-translate-y-4 shadow-2xl">
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs bg-blue-500 text-white px-3 py-1 rounded-full font-bold tracking-wide">Most Popular</span>
-                <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">Pro</p>
-                <p className="text-3xl font-extrabold text-white mb-1">₹599</p>
-                <p className="text-gray-400 text-sm font-medium mb-6 pb-6 border-b border-white/5">25 Scans</p>
-                <ul className="text-sm font-medium text-gray-400 space-y-3 mb-8 flex-grow">
-                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>25 statement analyses</li>
-                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Risk score + Summary</li>
-                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Priority Processing</li>
-                </ul>
-                <button
-                  onClick={() => setShowCheckout({show: true, amount: '599', planName: 'Pro', scans: 25})}
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-3 rounded-xl transition-all tracking-wide"
-                >
-                  Get Pro
-                </button>
-              </div>
-
-              <div className="bg-white/3 border border-white/10 rounded-2xl p-6 flex flex-col">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Business</p>
-                <p className="text-3xl font-extrabold text-white mb-1">₹999</p>
-                <p className="text-gray-400 text-sm font-medium mb-6 pb-6 border-b border-white/5">50 Scans <span className="text-emerald-400 text-xs ml-2">(Best Value)</span></p>
-                <ul className="text-sm font-medium text-gray-400 space-y-3 mb-8 flex-grow">
-                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>50 statement analyses</li>
-                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Unlocks all features</li>
-                  <li className="flex items-center gap-2"><svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Direct Founder Support</li>
-                </ul>
-                <button
-                  onClick={() => setShowCheckout({show: true, amount: '999', planName: 'Business', scans: 50})}
-                  className="w-full bg-white/10 hover:bg-white/15 border border-white/10 text-white font-bold py-3 rounded-xl transition-all tracking-wide"
-                >
-                  Get Business
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* MAIN UPLOAD SECTION */}
         {!showPaywall && !showSignupWall && !result && (
-          <>
-            <div className="max-w-4xl mx-auto relative group mt-4 sm:mt-10">
-              <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-emerald-500/5 rounded-[2rem] blur-2xl opacity-50 pointer-events-none"></div>
+          <div className="w-full flex flex-col items-center">
+            
+            <div className="text-center mb-12 max-w-3xl">
+              <div className="inline-flex items-center gap-2 border border-white/10 rounded-full px-4 py-1.5 text-xs text-gray-300 mb-8 bg-[#1A1A1A] hover:bg-[#222222] transition-colors cursor-default">
+                <span className="w-2 h-2 rounded-full bg-[#3ECF8E] animate-pulse"></span>
+                ClearStatement 2.0 is live. <span className="text-[#3ECF8E] ml-1">Read the docs →</span>
+              </div>
+              <h1 className="text-5xl sm:text-7xl font-semibold text-white mb-6 tracking-tight leading-[1.1]">
+                Underwrite in seconds. <br/>
+                <span className="text-[#3ECF8E]">Scale to millions.</span>
+              </h1>
+              <p className="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
+                The AI-powered parsing platform for Indian banking. Drop a statement, extract verified income, and assess risk instantly.
+              </p>
+            </div>
+
+            {/* UPLOAD WIDGET */}
+            <div className="w-full max-w-3xl glass-panel rounded-2xl p-6 sm:p-10 shadow-[0_0_40px_rgba(62,207,142,0.05)] border border-[#3ECF8E]/20">
               
-              <div className="relative bg-[#0B101A] border border-white/10 rounded-[2rem] p-6 sm:p-12 shadow-2xl overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent"></div>
-
-                {!user && !guestScanned && (
-                  <div className="text-center mb-10">
-                    <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 text-xs text-blue-400 mb-6 shadow-sm">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></div>
-                      <span className="font-semibold tracking-wide">No signup needed for your first scan</span>
-                    </div>
-                    <h1 className="text-4xl sm:text-6xl font-extrabold text-white mb-5 leading-tight tracking-tight">
-                      Verify income in
-                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400"> 8 seconds</span>
-                    </h1>
-                    <p className="text-gray-400 text-sm sm:text-lg max-w-xl mx-auto leading-relaxed font-medium">
-                      Upload any Indian bank statement PDF. Get verified salary, risk score and underwriter summary instantly.
-                    </p>
-                  </div>
-                )}
-
-                {user && (
-                  <div className="mb-8 flex items-center justify-between pb-6 border-b border-white/5">
-                    <div>
-                      <h2 className="text-2xl font-bold text-white tracking-tight">Workspace</h2>
-                      <p className="text-gray-500 text-sm mt-1 font-medium">{user.email}</p>
-                    </div>
-                    {!isPaid && (
-                      <div className="text-right bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-0.5">Free scans left</p>
-                        <p className="text-2xl font-extrabold text-white">{scansLeft}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="bg-white/3 border border-white/5 rounded-2xl sm:rounded-3xl p-5 sm:p-8 relative">
-                  <label className={`flex flex-col items-center justify-center w-full h-44 sm:h-56 border-2 border-dashed rounded-xl sm:rounded-2xl cursor-pointer transition-all duration-300 ${
-                    file ? 'border-emerald-500/50 bg-emerald-500/5 shadow-[0_0_30px_-10px_rgba(16,185,129,0.2)]' : 'border-white/10 hover:border-blue-500/40 hover:bg-blue-500/5'
-                  }`}>
-                    <div className="text-center px-4">
-                      {file ? (
-                        <>
-                          <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4 shadow-inner">
-                            <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
-                          <p className="text-emerald-400 text-base font-bold tracking-wide truncate max-w-xs mx-auto">{file.name}</p>
-                          <p className="text-gray-500 text-xs mt-1.5 font-bold uppercase tracking-wider">Ready to analyze</p>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4 transition-transform group-hover:scale-110">
-                            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                            </svg>
-                          </div>
-                          <p className="text-gray-200 text-base font-semibold mb-1.5 tracking-wide">Drop bank statement PDF here</p>
-                          <p className="text-gray-500 text-xs font-medium">Supports PDF statements up to 10MB</p>
-                        </>
-                      )}
-                    </div>
-                    <input type="file" accept=".pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-                  </label>
-
-                  {file && !loading && (
-                    <div className="mt-4 animate-slide-up">
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                        </div>
-                        <input
-                          type="password"
-                          placeholder="PDF Password (Leave blank if not protected)"
-                          value={pdfPassword}
-                          onChange={(e) => setPdfPassword(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 text-sm text-white placeholder-gray-500 transition-all"
-                        />
-                      </div>
-                    </div>
+              {user && (
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
+                  <span className="text-sm font-medium text-gray-300">Workspace: <span className="text-white">{user.email}</span></span>
+                  {!isPaid && (
+                    <span className="text-xs bg-[#1A1A1A] text-gray-300 border border-white/10 px-3 py-1 rounded-md font-mono">
+                      Quota: {scansLeft}/2
+                    </span>
                   )}
+                </div>
+              )}
 
-                  {loading ? (
-                    <div className="w-full mt-6 bg-[#080c14] border border-white/10 rounded-xl p-5 shadow-inner">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-sm text-blue-400 font-bold tracking-wide animate-pulse">{loadingText}</span>
-                        <span className="text-sm text-gray-400 font-mono font-bold">{Math.round(progress)}%</span>
+              <label className={`flex flex-col items-center justify-center w-full h-48 sm:h-64 border border-dashed rounded-xl cursor-pointer transition-all duration-200 ${
+                file ? 'border-[#3ECF8E] bg-[#3ECF8E]/5' : 'border-white/20 bg-[#111111] hover:border-[#3ECF8E]/50 hover:bg-[#1A1A1A]'
+              }`}>
+                <div className="text-center px-4">
+                  {file ? (
+                    <>
+                      <div className="w-12 h-12 rounded-lg bg-[#3ECF8E]/20 flex items-center justify-center mx-auto mb-4 border border-[#3ECF8E]/30">
+                        <svg className="w-6 h-6 text-[#3ECF8E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       </div>
-                      <div className="w-full bg-white/5 rounded-full h-2.5 overflow-hidden">
-                        <div 
-                          className="bg-gradient-to-r from-blue-600 to-emerald-400 h-2.5 rounded-full transition-all duration-300 ease-out relative"
-                          style={{ width: `${progress}%` }}
-                        >
-                          <div className="absolute top-0 right-0 bottom-0 left-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgo8L3N2Zz4=')] opacity-50"></div>
-                        </div>
-                      </div>
-                    </div>
+                      <p className="text-white text-base font-semibold tracking-wide truncate max-w-[250px] mx-auto">{file.name}</p>
+                      <p className="text-[#3ECF8E] text-xs mt-2 font-mono uppercase tracking-widest">Document Secured</p>
+                    </>
                   ) : (
-                    <div className="flex gap-3 mt-4">
-                      <button
-                        onClick={handleUpload}
-                        disabled={!file}
-                        className={`flex-1 font-bold py-4 rounded-xl transition-all text-sm tracking-wide ${
-                          file ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-[0_4px_14px_0_rgba(59,130,246,0.39)]'
-                          : 'bg-white/5 text-gray-600 cursor-not-allowed'
-                        }`}
-                      >
-                        {!user ? 'Analyze Free — No signup needed' : 'Analyze Statement'}
-                      </button>
-                      
-                      {file && (
-                        <button
-                          onClick={(e) => { e.preventDefault(); setFile(null); setPdfPassword(''); }}
-                          className="px-6 sm:px-8 font-bold py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white rounded-xl transition-all text-sm tracking-wide"
-                        >
-                          Cancel
-                        </button>
-                      )}
-                    </div>
+                    <>
+                      <div className="w-12 h-12 rounded-lg bg-[#1A1A1A] border border-white/10 flex items-center justify-center mx-auto mb-4 transition-transform group-hover:scale-110">
+                        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                      </div>
+                      <p className="text-white text-lg font-medium mb-1">Click to upload statement</p>
+                      <p className="text-gray-500 text-sm">PDF formats up to 50MB supported</p>
+                    </>
                   )}
+                </div>
+                <input type="file" accept=".pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+              </label>
 
-                  <div className="mt-6 flex items-start sm:items-center justify-center gap-2.5 text-center sm:text-left px-2 bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-3">
-                    <svg className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5 sm:mt-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    <p className="text-xs text-gray-400 leading-relaxed font-medium">
-                      <span className="font-bold text-emerald-400/90">Bank-Grade Security.</span> All PDFs are encrypted and instantly deleted after analysis. We never store your financial data.
-                    </p>
+              {file && !loading && (
+                <div className="mt-5 animate-slide-up">
+                  <input
+                    type="password"
+                    placeholder="PDF Password (Optional)"
+                    value={pdfPassword}
+                    onChange={(e) => setPdfPassword(e.target.value)}
+                    className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-lg focus:outline-none focus:border-[#3ECF8E] text-sm text-white placeholder-gray-500 transition-colors font-mono"
+                  />
+                </div>
+              )}
+
+              {loading ? (
+                <div className="w-full mt-6 bg-[#111111] border border-white/10 rounded-lg p-5">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-xs text-[#3ECF8E] font-mono animate-pulse">{loadingText}</span>
+                    <span className="text-xs text-white font-mono">{Math.round(progress)}%</span>
+                  </div>
+                  <div className="w-full bg-[#1A1A1A] rounded-full h-1.5 overflow-hidden">
+                    <div className="bg-[#3ECF8E] h-1.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
                   </div>
                 </div>
-              </div>
-
-              {/* INFINITE MARQUEE SLIDER */}
-              <div className="mt-16 sm:mt-24">
-                <p className="text-center text-xs font-bold text-gray-600 uppercase tracking-widest mb-8">Seamlessly processes statements from</p>
-                <div className="relative flex overflow-hidden group">
-                  <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#080C14] to-transparent z-10 pointer-events-none"></div>
-                  <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#080C14] to-transparent z-10 pointer-events-none"></div>
-                  <div className="animate-scroll">
-                    {SUPPORTED_BANKS.map((bank, index) => (
-                      <div key={`bank-1-${index}`} className="flex items-center justify-center px-6 sm:px-10">
-                        <span className="text-base sm:text-lg font-bold text-gray-500/40 whitespace-nowrap tracking-wide">{bank}</span>
-                      </div>
-                    ))}
-                    {SUPPORTED_BANKS.map((bank, index) => (
-                      <div key={`bank-2-${index}`} className="flex items-center justify-center px-6 sm:px-10">
-                        <span className="text-base sm:text-lg font-bold text-gray-500/40 whitespace-nowrap tracking-wide">{bank}</span>
-                      </div>
-                    ))}
-                  </div>
+              ) : (
+                <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={handleUpload}
+                    disabled={!file}
+                    className={`flex-1 font-semibold py-3.5 rounded-lg text-sm transition-all ${
+                      file ? 'bg-[#3ECF8E] hover:bg-[#32a873] text-black shadow-lg' : 'bg-[#1A1A1A] text-gray-500 cursor-not-allowed border border-white/10'
+                    }`}
+                  >
+                    {!user ? 'Start project (Free)' : 'Execute Analysis'}
+                  </button>
+                  {file && (
+                    <button onClick={() => { setFile(null); setPdfPassword(''); }} className="px-6 py-3.5 font-medium bg-[#111111] hover:bg-[#1A1A1A] border border-white/10 text-white rounded-lg transition-colors text-sm">
+                      Clear
+                    </button>
+                  )}
                 </div>
-              </div>
+              )}
+            </div>
 
-              {/* FEATURES GRID */}
-              <div className="mt-24 sm:mt-32 max-w-5xl mx-auto px-4">
-                <div className="text-center mb-12">
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Underwriting on Autopilot</h2>
-                  <p className="text-gray-400 text-sm sm:text-base mt-3 font-medium max-w-2xl mx-auto">Stop wasting hours with highlighters and calculators. Let our AI do the heavy lifting.</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-[#0B101A] border border-white/5 p-6 rounded-2xl shadow-lg hover:border-blue-500/30 transition-colors">
-                    <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-5 border border-blue-500/20">
-                      <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            {/* MARQUEE */}
+            <div className="mt-20 w-full overflow-hidden border-y border-white/5 py-8 bg-[#0a0a0a]">
+              <p className="text-center text-xs text-gray-500 font-mono mb-6 uppercase tracking-widest">Supported Infrastructure</p>
+              <div className="relative flex">
+                <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#000000] to-transparent z-10"></div>
+                <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-[#000000] to-transparent z-10"></div>
+                <div className="animate-scroll">
+                  {SUPPORTED_BANKS.map((bank, index) => (
+                    <div key={`bank-1-${index}`} className="flex items-center justify-center px-8">
+                      <span className="text-lg font-bold text-gray-600/50 whitespace-nowrap">{bank}</span>
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-2 tracking-wide">AI-Powered Parsing</h3>
-                    <p className="text-sm text-gray-400 font-medium leading-relaxed">Instantly extracts verified salary credits from messy, unstructured PDF bank statements.</p>
-                  </div>
-                  <div className="bg-[#0B101A] border border-white/5 p-6 rounded-2xl shadow-lg hover:border-emerald-500/30 transition-colors">
-                    <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-5 border border-emerald-500/20">
-                      <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                    </div>
-                    <h3 className="text-lg font-bold text-white mb-2 tracking-wide">Fraud Detection</h3>
-                    <p className="text-sm text-gray-400 font-medium leading-relaxed">Automatically detects and flags bounced cheques, hidden loan EMIs, and risky transactional behavior.</p>
-                  </div>
-                  <div className="bg-[#0B101A] border border-white/5 p-6 rounded-2xl shadow-lg hover:border-purple-500/30 transition-colors">
-                    <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-5 border border-purple-500/20">
-                      <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                    </div>
-                    <h3 className="text-lg font-bold text-white mb-2 tracking-wide">Underwriter Ready</h3>
-                    <p className="text-sm text-gray-400 font-medium leading-relaxed">Generates a clean, highly accurate, and exportable financial summary for immediate loan processing.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* FAQ SECTION */}
-              <div className="mt-24 sm:mt-32 max-w-3xl mx-auto px-4 pb-10">
-                <div className="text-center mb-10">
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Frequently Asked Questions</h2>
-                </div>
-                <div className="space-y-4">
-                  {FAQS.map((faq, idx) => (
-                    <div key={idx} className="bg-[#0B101A] border border-white/5 rounded-2xl overflow-hidden transition-all">
-                      <button 
-                        onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                        className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors"
-                      >
-                        <span className="font-bold text-white tracking-wide">{faq.q}</span>
-                        <svg className={`w-5 h-5 text-gray-400 transform transition-transform duration-200 ${openFaq === idx ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                      </button>
-                      {openFaq === idx && (
-                        <div className="px-6 pb-5 pt-1 text-sm text-gray-400 font-medium leading-relaxed border-t border-white/5 mt-1">
-                          {faq.a}
-                        </div>
-                      )}
+                  ))}
+                  {SUPPORTED_BANKS.map((bank, index) => (
+                    <div key={`bank-2-${index}`} className="flex items-center justify-center px-8">
+                      <span className="text-lg font-bold text-gray-600/50 whitespace-nowrap">{bank}</span>
                     </div>
                   ))}
                 </div>
               </div>
-
             </div>
-          </>
+
+            {/* SUPABASE-STYLE BENTO BOX FEATURES */}
+            <div className="mt-24 w-full max-w-5xl">
+               <h2 className="text-3xl font-semibold text-white mb-10 text-center tracking-tight">Best of breed analytics.<br/><span className="text-gray-500">Integrated as a platform.</span></h2>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Card 1 */}
+                  <div className="bg-[#111111] border border-white/5 p-8 rounded-2xl hover:border-white/10 transition-colors">
+                    <div className="flex items-center gap-3 mb-4">
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                      <h3 className="text-white font-semibold">AI Database</h3>
+                    </div>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      Every statement is processed via a high-capacity Groq LLM cluster. Easily extract income, EMIs, and transactional history from unstructured PDFs.
+                    </p>
+                  </div>
+                  {/* Card 2 */}
+                  <div className="bg-[#111111] border border-white/5 p-8 rounded-2xl hover:border-white/10 transition-colors">
+                    <div className="flex items-center gap-3 mb-4">
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                      <h3 className="text-white font-semibold">Fraud Authentication</h3>
+                    </div>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      Add instant fraud detection securing your underwriting pipeline. Automatically flags bounced cheques and hidden loan obligations.
+                    </p>
+                  </div>
+                  {/* Card 3 */}
+                  <div className="bg-[#111111] border border-white/5 p-8 rounded-2xl hover:border-white/10 transition-colors">
+                    <div className="flex items-center gap-3 mb-4">
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                      <h3 className="text-white font-semibold">Edge Security</h3>
+                    </div>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      Execute financial processing directly in secure memory. Files are instantly and permanently purged. Zero data retention policies applied.
+                    </p>
+                  </div>
+                  {/* Card 4 */}
+                  <div className="bg-[#111111] border border-white/5 p-8 rounded-2xl hover:border-white/10 transition-colors">
+                    <div className="flex items-center gap-3 mb-4">
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                      <h3 className="text-white font-semibold">Instant Outputs</h3>
+                    </div>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      Build lending decisions faster with real-time data synchronization. Get an underwriter-ready risk score formatted in JSON in under 10 seconds.
+                    </p>
+                  </div>
+               </div>
+            </div>
+          </div>
         )}
 
-        {/* RESULTS WITH FALLBACKS */}
+        {/* RESULTS DASHBOARD */}
         {result && !result.error && (
-          <div className="max-w-3xl mx-auto mt-8">
-            <div className="flex items-start sm:items-center justify-between mb-6 gap-3">
+          <div className="w-full max-w-4xl mx-auto animate-slide-up">
+            <div className="mb-8 border-b border-white/10 pb-6 flex items-center justify-between">
               <div>
-                <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Analysis Complete</h2>
-                <p className="text-gray-500 text-xs sm:text-sm mt-1 font-medium">AI-verified financial summary</p>
+                <h2 className="text-3xl font-semibold text-white tracking-tight">Database Execution Success</h2>
+                <p className="text-gray-500 text-sm mt-2">Parsed response via LLM cluster</p>
               </div>
-              <span className={`text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-lg border shrink-0 shadow-sm ${
-                (result.risk_score || 0) >= 7 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                : (result.risk_score || 0) >= 4 ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-              }`}>
-                {getRiskLabel(result.risk_score || 10)}
+              <span className="px-3 py-1 bg-[#1A1A1A] border border-white/10 rounded-full text-xs font-mono text-[#3ECF8E]">
+                Status 200 OK
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
-              {[
-                { label: 'Monthly Income', value: `₹${(result.verified_monthly_salary || 0).toLocaleString('en-IN')}`, sub: 'Verified salary credits', color: 'text-emerald-400' },
-                { label: 'Risk Score', value: `${result.risk_score || 0}/10`, sub: getRiskLabel(result.risk_score || 10), color: getRiskColor(result.risk_score || 10) },
-                { label: 'Bounced Cheques', value: String(result.bounced_cheque_count || 0), sub: (result.bounced_cheque_count || 0) === 0 ? 'No bounces detected' : 'Bounces found', color: (result.bounced_cheque_count || 0) === 0 ? 'text-emerald-400' : 'text-rose-400' },
-                { label: 'Monthly EMI', value: `₹${(result.total_emi || 0).toLocaleString('en-IN')}`, sub: 'Total loan obligations', color: 'text-white' },
-              ].map((item) => (
-                <div key={item.label} className="bg-[#0B101A] border border-white/5 rounded-2xl p-6 sm:p-8 shadow-xl">
-                  <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">{item.label}</p>
-                  <p className={`text-4xl sm:text-5xl font-extrabold tracking-tight ${item.color}`}>{item.value}</p>
-                  <p className="text-gray-500 text-sm mt-3 font-medium">{item.sub}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              <div className="bg-[#111111] border border-white/5 p-6 rounded-xl hover:border-white/10 transition-colors">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-gray-400 text-sm font-medium">Verified Salary Credits</p>
+                  <svg className="w-4 h-4 text-[#3ECF8E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
                 </div>
-              ))}
+                <p className="text-4xl font-semibold text-white">₹{(result.verified_monthly_salary || 0).toLocaleString('en-IN')}</p>
+              </div>
+
+              <div className="bg-[#111111] border border-white/5 p-6 rounded-xl hover:border-white/10 transition-colors">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-gray-400 text-sm font-medium">Algorithmic Risk Score</p>
+                  <span className={`text-xs font-mono px-2 py-0.5 rounded border border-white/10 ${getRiskColor(result.risk_score || 10)} bg-black/50`}>
+                    {getRiskLabel(result.risk_score || 10)}
+                  </span>
+                </div>
+                <p className="text-4xl font-semibold text-white">
+                  {result.risk_score || 0}<span className="text-gray-600 text-2xl">/10</span>
+                </p>
+              </div>
+
+              <div className="bg-[#111111] border border-white/5 p-6 rounded-xl hover:border-white/10 transition-colors">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-gray-400 text-sm font-medium">Bounced Cheques</p>
+                </div>
+                <p className={`text-4xl font-semibold ${(result.bounced_cheque_count || 0) === 0 ? 'text-[#3ECF8E]' : 'text-[#FF5A5F]'}`}>
+                  {result.bounced_cheque_count || 0}
+                </p>
+              </div>
+
+              <div className="bg-[#111111] border border-white/5 p-6 rounded-xl hover:border-white/10 transition-colors">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-gray-400 text-sm font-medium">Total EMIs Detected</p>
+                </div>
+                <p className="text-4xl font-semibold text-white">₹{(result.total_emi || 0).toLocaleString('en-IN')}</p>
+              </div>
             </div>
 
-            <button
-              onClick={() => { setResult(null); setFile(null); setPdfPassword(''); }}
-              className="w-full bg-[#0B101A] hover:bg-white/5 border border-white/10 text-gray-300 hover:text-white font-bold tracking-wide py-4 rounded-xl transition-all text-sm shadow-md"
-            >
-              Analyze Another Statement
-            </button>
+            <div className="flex justify-end">
+               <button
+                 onClick={goHome}
+                 className="bg-[#1A1A1A] hover:bg-[#222222] border border-white/10 text-white font-medium py-3 px-6 rounded-lg transition-colors text-sm"
+               >
+                 Execute New Query
+               </button>
+            </div>
           </div>
         )}
       </div>
 
       {/* FOOTER */}
-      <footer className="border-t border-white/5 py-10 mt-auto shrink-0 relative z-20 bg-[#080C14]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex flex-col items-center sm:items-start">
-            <div className="flex items-center gap-3 mb-3">
-              <img src="/logo.png" alt="ClearStatement Logo" className="w-6 h-6 rounded object-contain shrink-0" />
-              <span className="font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">ClearStatement</span>
-            </div>
-            <p className="text-xs text-gray-600 font-medium">© 2026 ClearStatement. All rights reserved.</p>
+      <footer className="border-t border-white/10 bg-[#000000] py-12 mt-auto relative z-20">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+             <img src="/logo.png" alt="ClearStatement Logo" className="w-6 h-6 grayscale hover:grayscale-0 transition-all cursor-pointer" onClick={goHome} />
+             <span className="font-semibold text-white tracking-tight">ClearStatement</span>
           </div>
-          
-          <div className="flex items-center gap-8 text-xs font-bold tracking-wide text-gray-500">
-            <button onClick={() => setShowPrivacy(true)} className="hover:text-gray-300 transition-colors">Privacy Policy</button>
-            <button onClick={() => setShowTerms(true)} className="hover:text-gray-300 transition-colors">Terms of Service</button>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-gray-300 transition-colors">Support</a>
+          <div className="flex gap-8 text-sm text-gray-500 font-medium">
+             <button className="hover:text-white transition-colors">Product</button>
+             <button className="hover:text-white transition-colors">Developers</button>
+             <button className="hover:text-white transition-colors">Pricing</button>
+             <button className="hover:text-white transition-colors">Privacy</button>
           </div>
-          
-          <div className="text-xs text-gray-600 font-medium px-4 py-2 bg-white/5 rounded-full border border-white/5">
-            Engineered by <span className="text-blue-400/90 font-bold tracking-wide">TheArise</span>
+          <div className="text-xs text-gray-600 font-mono">
+            Deployed by <span className="text-white">TheArise</span>
           </div>
         </div>
       </footer>
-
     </div>
   )
 }
