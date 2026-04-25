@@ -158,7 +158,17 @@ export default function Home() {
   const PricingGrid = () => (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14, maxWidth: 840, margin: '0 auto' }}>
       {PLANS.map(plan => (
-        <div key={plan.id} style={{ background: plan.popular ? '#040d10' : '#080808', border: `1px solid ${plan.popular ? '#00d4ff33' : '#1a1a1a'}`, borderRadius: 16, padding: 26, position: 'relative', textAlign: 'left' }}>
+        <div key={plan.id} style={{
+          background: plan.popular ? '#040d10' : '#080808',
+          // CHANGED: brighter borders on all pricing cards
+          border: `1px solid ${plan.popular ? 'rgba(0,212,255,0.28)' : '#272727'}`,
+          borderRadius: 16,
+          padding: 26,
+          position: 'relative',
+          textAlign: 'left',
+          // CHANGED: subtle glow on popular card
+          boxShadow: plan.popular ? '0 0 30px rgba(0,212,255,0.07)' : 'none'
+        }}>
           {plan.popular && (
             <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#00d4ff', color: '#000', fontSize: 11, fontWeight: 700, padding: '4px 14px', borderRadius: 20, whiteSpace: 'nowrap' }}>Most Popular</div>
           )}
@@ -179,7 +189,7 @@ export default function Home() {
             onClick={() => setSelectedPlan(plan)}
             style={plan.popular
               ? { width: '100%', padding: '12px', borderRadius: 10, fontSize: 14, background: '#00d4ff', color: '#000', border: 'none', cursor: 'pointer', fontWeight: 700 }
-              : { width: '100%', padding: '12px', borderRadius: 10, fontSize: 14, background: '#0d0d0d', border: '1px solid #222', color: '#888', cursor: 'pointer', fontWeight: 600 }
+              : { width: '100%', padding: '12px', borderRadius: 10, fontSize: 14, background: '#0d0d0d', border: '1px solid #2a2a2a', color: '#888', cursor: 'pointer', fontWeight: 600 }
             }
           >{plan.cta}</button>
         </div>
@@ -314,7 +324,8 @@ export default function Home() {
           <div style={{ paddingBottom: 100 }}>
 
             {/* HERO — full viewport height, upload centered */}
-            <div style={{ minHeight: 'calc(100vh - 90px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 40, paddingBottom: 40 }}>
+            {/* CHANGED: removed paddingTop/paddingBottom, set to 0 so it's truly centered */}
+            <div style={{ minHeight: 'calc(100vh - 115px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 0, paddingBottom: 0 }}>
 
               {/* BADGE */}
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: 20, padding: '4px 13px', marginBottom: 22 }}>
@@ -343,12 +354,30 @@ export default function Home() {
 
               {/* UPLOAD BOX */}
               <div style={{ width: '100%', maxWidth: 540 }}>
-                <div style={{ background: '#070707', border: '1px solid #181818', borderRadius: 18, padding: 24 }}>
+                {/* CHANGED: blue glowing border on outer box */}
+                <div style={{
+                  background: '#070707',
+                  border: '1px solid rgba(0,212,255,0.28)',
+                  borderRadius: 18,
+                  padding: 24,
+                  boxShadow: '0 0 40px rgba(0,212,255,0.09), 0 0 0 1px rgba(0,212,255,0.03)'
+                }}>
                   <label
                     onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                     onDragLeave={() => setDragOver(false)}
                     onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f?.type === 'application/pdf') setFile(f) }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 160, border: `2px dashed ${dragOver ? '#00d4ff' : file ? '#00d4ff33' : '#1a1a1a'}`, borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s', background: dragOver ? 'rgba(0,212,255,0.02)' : 'transparent', marginBottom: 14 }}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      height: 160,
+                      // CHANGED: always visible blue dashed border, brighter on hover/file
+                      border: `2px dashed ${dragOver ? '#00d4ff' : file ? '#00d4ff' : 'rgba(0,212,255,0.35)'}`,
+                      borderRadius: 12,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      // CHANGED: subtle blue tint background
+                      background: dragOver ? 'rgba(0,212,255,0.04)' : file ? 'rgba(0,212,255,0.02)' : 'rgba(0,212,255,0.015)',
+                      marginBottom: 14
+                    }}
                   >
                     {file ? (
                       <div style={{ textAlign: 'center', padding: 14 }}>
@@ -360,11 +389,12 @@ export default function Home() {
                       </div>
                     ) : (
                       <div style={{ textAlign: 'center', padding: 14 }}>
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: '#0d0d0d', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', animation: 'float 3s ease-in-out infinite' }}>
-                          <svg width="18" height="18" fill="none" stroke="#444" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        {/* CHANGED: icon box now has blue tint to match border */}
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(0,212,255,0.07)', border: '1px solid rgba(0,212,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', animation: 'float 3s ease-in-out infinite' }}>
+                          <svg width="18" height="18" fill="none" stroke="#00d4ff" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                         </div>
                         <div style={{ color: '#bbb', fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Drop your bank statement here</div>
-                        <div style={{ color: '#444', fontSize: 12 }}>or click to browse · PDF only</div>
+                        <div style={{ color: '#555', fontSize: 12 }}>or click to browse · PDF only</div>
                       </div>
                     )}
                     <input type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => setFile(e.target.files?.[0] || null)} />
@@ -401,7 +431,7 @@ export default function Home() {
                     {[['🔐','256-bit SSL'],['🗑️','Deleted instantly'],['🇮🇳','Indian banks']].map(([icon,label]) => (
                       <div key={label as string} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ fontSize: 11 }}>{icon}</span>
-                        <span style={{ fontSize: 10, color: '#444', fontWeight: 500 }}>{label}</span>
+                        <span style={{ fontSize: 10, color: '#555', fontWeight: 500 }}>{label}</span>
                       </div>
                     ))}
                   </div>
@@ -423,7 +453,8 @@ export default function Home() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
                 {REVIEWS.map((r, i) => (
-                  <div key={i} style={{ background: '#060606', border: '1px solid #111', borderRadius: 14, padding: 20 }}>
+                  // CHANGED: slightly brighter border + inset highlight
+                  <div key={i} style={{ background: '#060606', border: '1px solid #1e1e1e', borderRadius: 14, padding: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)' }}>
                     <div style={{ display: 'flex', gap: 2, marginBottom: 10 }}>{'★★★★★'.split('').map((s,j) => <span key={j} style={{ color: '#f59e0b', fontSize: 12 }}>{s}</span>)}</div>
                     <p style={{ color: '#777', fontSize: 13, lineHeight: 1.7, marginBottom: 16, fontStyle: 'italic' }}>"{r.text}"</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -444,7 +475,8 @@ export default function Home() {
               <h2 style={{ fontSize: 'clamp(20px, 3vw, 30px)', fontWeight: 700, color: '#fff', marginBottom: 36, letterSpacing: '-0.025em' }}>Three steps to clarity</h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14 }}>
                 {[{n:'01',t:'Upload PDF',d:'Drop any Indian bank statement. Password protected or not — handled automatically.'},{n:'02',t:'Smart Analysis',d:'Reads every transaction, detects salary, EMIs, and risk indicators instantly.'},{n:'03',t:'Get Report',d:'Verified summary with income, EMIs, bounces, and risk score in seconds.'}].map(item => (
-                  <div key={item.n} style={{ background: '#060606', border: '1px solid #111', borderRadius: 14, padding: 24, textAlign: 'left' }}>
+                  // CHANGED: slightly brighter border + inset highlight
+                  <div key={item.n} style={{ background: '#060606', border: '1px solid #1e1e1e', borderRadius: 14, padding: 24, textAlign: 'left', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)' }}>
                     <div style={{ fontSize: 36, fontWeight: 800, color: '#111', marginBottom: 12, lineHeight: 1, letterSpacing: '-0.04em' }}>{item.n}</div>
                     <div style={{ color: '#ccc', fontWeight: 600, fontSize: 14, marginBottom: 7 }}>{item.t}</div>
                     <div style={{ color: '#666', fontSize: 12, lineHeight: 1.65 }}>{item.d}</div>
@@ -569,5 +601,6 @@ export default function Home() {
     </div>
   )
 }
+
 
 
