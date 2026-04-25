@@ -18,9 +18,9 @@ const SUPPORTED_BANKS = [
 const REVIEWS = [
   { name: 'Rajesh Sharma', role: 'Loan Officer, Bajaj Finserv', text: 'Reduced our statement verification time from 2 days to under 3 minutes. The accuracy is remarkable.', avatar: 'RS' },
   { name: 'Priya Menon', role: 'Credit Analyst, NBFC', text: 'The risk scoring is incredibly accurate. We\'ve integrated this into our underwriting workflow and approval rates have improved.', avatar: 'PM' },
-  { name: 'Ankit Verma', role: 'Founder, LendFast', text: 'Finally a tool built for Indian bank statements. Handles SBI, HDFC, ICICI formats perfectly.', avatar: 'AV' },
+  { name: 'Raju kumar', role: 'Founder, LendFast', text: 'Finally a tool built for Indian bank statements. Handles SBI, HDFC, ICICI formats perfectly.', avatar: 'AV' },
   { name: 'Deepa Krishnan', role: 'Operations Head, Fintech Startup', text: 'Processing 500+ statements a month with zero manual effort. Password-protected PDF support is a game changer.', avatar: 'DK' },
-  { name: 'Mohammed Faiz', role: 'Risk Manager, Microfinance', text: 'EMI detection accuracy is phenomenal. We caught overleveraged borrowers that slipped through our old process.', avatar: 'MF' },
+  { name: 'Mohammed karim', role: 'Risk Manager, Microfinance', text: 'EMI detection accuracy is phenomenal. We caught overleveraged borrowers that slipped through our old process.', avatar: 'MF' },
 ]
 
 const PLANS = [
