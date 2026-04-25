@@ -18,9 +18,9 @@ const SUPPORTED_BANKS = [
 const REVIEWS = [
   { name: 'Rajesh Sharma', role: 'Loan Officer, Bajaj Finserv', text: 'Reduced our statement verification time from 2 days to under 3 minutes. The accuracy is remarkable.', avatar: 'RS' },
   { name: 'Priya Menon', role: 'Credit Analyst, NBFC', text: 'The risk scoring is incredibly accurate. We\'ve integrated this into our underwriting workflow and approval rates have improved.', avatar: 'PM' },
-  { name: 'Raju kumar', role: 'Founder, LendFast', text: 'Finally a tool built for Indian bank statements. Handles SBI, HDFC, ICICI formats perfectly.', avatar: 'AV' },
+  { name: 'Ankit Verma', role: 'Founder, LendFast', text: 'Finally a tool built for Indian bank statements. Handles SBI, HDFC, ICICI formats perfectly.', avatar: 'AV' },
   { name: 'Deepa Krishnan', role: 'Operations Head, Fintech Startup', text: 'Processing 500+ statements a month with zero manual effort. Password-protected PDF support is a game changer.', avatar: 'DK' },
-  { name: 'Mohammed karim', role: 'Risk Manager, Microfinance', text: 'EMI detection accuracy is phenomenal. We caught overleveraged borrowers that slipped through our old process.', avatar: 'MF' },
+  { name: 'Mohammed Faiz', role: 'Risk Manager, Microfinance', text: 'EMI detection accuracy is phenomenal. We caught overleveraged borrowers that slipped through our old process.', avatar: 'MF' },
 ]
 
 const PLANS = [
@@ -61,6 +61,23 @@ export default function Home() {
   const [showTerms, setShowTerms] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<typeof PLANS[0] | null>(null)
+  const [timer, setTimer] = useState(600)
+
+  // 10 min countdown timer — resets each time a plan modal opens
+  useEffect(() => {
+    if (!selectedPlan) return
+    setTimer(600)
+    const interval = setInterval(() => {
+      setTimer(t => {
+        if (t <= 1) { clearInterval(interval); return 0 }
+        return t - 1
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [selectedPlan])
+
+  const timerDisplay = `${String(Math.floor(timer / 60)).padStart(2, '0')}:${String(timer % 60).padStart(2, '0')}`
+  const timerUrgent = timer < 120
 
   const showToast = (msg: string, type: 'error' | 'success' = 'error') => {
     setToast({ msg, type })
@@ -77,8 +94,12 @@ export default function Home() {
     const g = localStorage.getItem('guest_scanned')
     if (g) setGuestScanned(true)
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) { setUser(session.user); await loadUser(session.user) }
+      try {
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+        const sessionPromise = supabase.auth.getSession()
+        const { data: { session } } = await Promise.race([sessionPromise, timeout]) as any
+        if (session?.user) { setUser(session.user); await loadUser(session.user) }
+      } catch (e) {}
       setAuthLoading(false)
     }
     init()
@@ -149,8 +170,18 @@ export default function Home() {
   const riskColor = (s: number) => s >= 7 ? '#10b981' : s >= 4 ? '#f59e0b' : '#ef4444'
   const riskLabel = (s: number) => s >= 7 ? 'LOW RISK' : s >= 4 ? 'MEDIUM RISK' : 'HIGH RISK'
 
+  // Builds a mailto: link that opens Gmail with plan details pre-filled
+  const buildMailtoLink = (plan: typeof PLANS[0]) => {
+    const email = 'clearstatement.billing@gmail.com'
+    const subject = encodeURIComponent(`Payment Confirmation – ClearStatement ${plan.label} Plan (${plan.price})`)
+    const body = encodeURIComponent(
+      `Hi,\n\nI have completed the UPI payment for the following plan:\n\nPlan: ${plan.label} – ${plan.price} (${plan.scans})\nTransaction ID: [paste your transaction ID here]\nUPI App used: [PhonePe / GPay / Paytm / BHIM]\n\nPlease activate my scans at the earliest.\n\nThank you!`
+    )
+    return `mailto:${email}?subject=${subject}&body=${body}`
+  }
+
   if (authLoading) return (
-    <main style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <main style={{ minHeight: '100vh', background: '#020818', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: 36, height: 36, border: '2px solid #00d4ff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
     </main>
   )
@@ -159,28 +190,23 @@ export default function Home() {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14, maxWidth: 840, margin: '0 auto' }}>
       {PLANS.map(plan => (
         <div key={plan.id} style={{
-          background: plan.popular ? '#040d10' : '#080808',
-          // CHANGED: brighter borders on all pricing cards
-          border: `1px solid ${plan.popular ? 'rgba(0,212,255,0.28)' : '#272727'}`,
-          borderRadius: 16,
-          padding: 26,
-          position: 'relative',
-          textAlign: 'left',
-          // CHANGED: subtle glow on popular card
-          boxShadow: plan.popular ? '0 0 30px rgba(0,212,255,0.07)' : 'none'
+          background: plan.popular ? 'linear-gradient(145deg, #041628, #071e35)' : 'linear-gradient(145deg, #060e1a, #0a1628)',
+          border: `1px solid ${plan.popular ? 'rgba(0,212,255,0.35)' : 'rgba(255,255,255,0.07)'}`,
+          borderRadius: 16, padding: 26, position: 'relative', textAlign: 'left',
+          boxShadow: plan.popular ? '0 0 40px rgba(0,212,255,0.1)' : '0 4px 24px rgba(0,0,0,0.3)'
         }}>
           {plan.popular && (
-            <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#00d4ff', color: '#000', fontSize: 11, fontWeight: 700, padding: '4px 14px', borderRadius: 20, whiteSpace: 'nowrap' }}>Most Popular</div>
+            <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(90deg, #00d4ff, #0077ff)', color: '#000', fontSize: 11, fontWeight: 700, padding: '4px 14px', borderRadius: 20, whiteSpace: 'nowrap' }}>Most Popular</div>
           )}
           {plan.badge && (
-            <div style={{ display: 'inline-block', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#10b981', fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 20, marginBottom: 12 }}>{plan.badge}</div>
+            <div style={{ display: 'inline-block', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981', fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 20, marginBottom: 12 }}>{plan.badge}</div>
           )}
-          <div style={{ fontSize: 10, color: '#555', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>{plan.label}</div>
+          <div style={{ fontSize: 10, color: plan.popular ? '#00d4ff' : '#4a6080', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>{plan.label}</div>
           <div style={{ fontSize: 38, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: 4 }}>{plan.price}</div>
-          <div style={{ fontSize: 13, color: '#555', marginBottom: 22 }}>{plan.scans}</div>
-          <div style={{ borderTop: '1px solid #181818', paddingTop: 18, marginBottom: 22 }}>
+          <div style={{ fontSize: 13, color: '#4a6080', marginBottom: 22 }}>{plan.scans}</div>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 18, marginBottom: 22 }}>
             {plan.features.map(f => (
-              <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '5px 0', color: '#888', fontSize: 13 }}>
+              <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '5px 0', color: '#8899aa', fontSize: 13 }}>
                 <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span> {f}
               </div>
             ))}
@@ -188,8 +214,8 @@ export default function Home() {
           <button
             onClick={() => setSelectedPlan(plan)}
             style={plan.popular
-              ? { width: '100%', padding: '12px', borderRadius: 10, fontSize: 14, background: '#00d4ff', color: '#000', border: 'none', cursor: 'pointer', fontWeight: 700 }
-              : { width: '100%', padding: '12px', borderRadius: 10, fontSize: 14, background: '#0d0d0d', border: '1px solid #2a2a2a', color: '#888', cursor: 'pointer', fontWeight: 600 }
+              ? { width: '100%', padding: '12px', borderRadius: 10, fontSize: 14, background: 'linear-gradient(90deg, #00d4ff, #0077ff)', color: '#000', border: 'none', cursor: 'pointer', fontWeight: 700, boxShadow: '0 4px 20px rgba(0,212,255,0.25)' }
+              : { width: '100%', padding: '12px', borderRadius: 10, fontSize: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#8899aa', cursor: 'pointer', fontWeight: 600 }
             }
           >{plan.cta}</button>
         </div>
@@ -198,7 +224,7 @@ export default function Home() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: '#000', color: '#e8e8e8', fontFamily: "'Inter',-apple-system,sans-serif", overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: '#020818', color: '#e8e8e8', fontFamily: "'Inter',-apple-system,sans-serif", overflowX: 'hidden' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -207,19 +233,21 @@ export default function Home() {
         @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
         @keyframes dot-glow { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes pulse-red { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239,68,68,0.3); } 50% { opacity: 0.85; box-shadow: 0 0 0 6px rgba(239,68,68,0); } }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        input { font-family: 'Inter',sans-serif !important; background: #0d0d0d !important; border: 1px solid #222 !important; color: #e8e8e8 !important; border-radius: 10px; width: 100%; padding: 13px 16px; font-size: 14px; }
+        input { font-family: 'Inter',sans-serif !important; background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #e8e8e8 !important; border-radius: 10px; width: 100%; padding: 13px 16px; font-size: 14px; }
         input:focus { border-color: #00d4ff !important; outline: none !important; box-shadow: 0 0 0 3px rgba(0,212,255,0.07) !important; }
-        input::placeholder { color: #444 !important; }
+        input::placeholder { color: #3a5070 !important; }
         button { font-family: 'Inter',sans-serif; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.15s; }
-        .modal-box { background: #080808; border: 1px solid #1a1a1a; border-radius: 20px; max-width: 500px; width: 100%; max-height: 84vh; overflow-y: auto; padding: 34px; position: relative; }
-        ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #222; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(1,4,16,0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.2s; }
+        .modal-box { background: linear-gradient(160deg, #070f24 0%, #0a1630 60%, #060e20 100%); border: 1px solid rgba(0,212,255,0.18); border-radius: 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 34px; position: relative; box-shadow: 0 32px 80px rgba(0,0,0,0.7), 0 0 60px rgba(0,100,255,0.08), inset 0 1px 0 rgba(255,255,255,0.05); }
+        .email-btn:hover { background: linear-gradient(135deg, #0d3570, #1050a0) !important; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,100,255,0.3) !important; }
+        ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-track { background: #020818; } ::-webkit-scrollbar-thumb { background: #1a3050; }
       `}</style>
 
       {/* TOAST */}
       {toast && (
-        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 300, padding: '12px 18px', borderRadius: 10, background: '#0a0a0a', border: `1px solid ${toast.type === 'error' ? '#ef4444' : '#10b981'}`, color: toast.type === 'error' ? '#ef4444' : '#10b981', fontWeight: 600, fontSize: 13, animation: 'slideUp 0.25s', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 300, padding: '12px 18px', borderRadius: 10, background: '#060f22', border: `1px solid ${toast.type === 'error' ? '#ef4444' : '#10b981'}`, color: toast.type === 'error' ? '#ef4444' : '#10b981', fontWeight: 600, fontSize: 13, animation: 'slideUp 0.25s', display: 'flex', alignItems: 'center', gap: 8 }}>
           {toast.type === 'success' ? '✓' : '✕'} {toast.msg}
         </div>
       )}
@@ -230,11 +258,11 @@ export default function Home() {
           <div className="modal-box" onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
               <h2 style={{ fontSize: 17, fontWeight: 700, color: '#fff' }}>Terms of Service</h2>
-              <button onClick={() => setShowTerms(false)} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: 18 }}>✕</button>
+              <button onClick={() => setShowTerms(false)} style={{ background: 'none', border: 'none', color: '#4a6080', cursor: 'pointer', fontSize: 18 }}>✕</button>
             </div>
-            <div style={{ color: '#888', fontSize: 13, lineHeight: 1.85 }}>
+            <div style={{ color: '#6680a0', fontSize: 13, lineHeight: 1.85 }}>
               {[['1. Acceptance','By accessing ClearStatement, you agree to these terms.'],['2. Service','ClearStatement provides smart bank statement analysis for financial verification. Results are informational and not a substitute for professional financial advice.'],['3. Data Privacy','Uploaded documents are processed in real-time and immediately deleted. We do not store, share, or sell your financial data.'],['4. Accuracy','Data should be verified by a qualified professional before making lending decisions.'],['5. Contact','clearstatement.billing@gmail.com']].map(([t,b]) => (
-                <div key={t} style={{ marginBottom: 14 }}><div style={{ color: '#ccc', fontWeight: 600, marginBottom: 3 }}>{t}</div><div>{b}</div></div>
+                <div key={t} style={{ marginBottom: 14 }}><div style={{ color: '#ccd6e8', fontWeight: 600, marginBottom: 3 }}>{t}</div><div>{b}</div></div>
               ))}
             </div>
           </div>
@@ -247,42 +275,115 @@ export default function Home() {
           <div className="modal-box" onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
               <h2 style={{ fontSize: 17, fontWeight: 700, color: '#fff' }}>Privacy Policy</h2>
-              <button onClick={() => setShowPrivacy(false)} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: 18 }}>✕</button>
+              <button onClick={() => setShowPrivacy(false)} style={{ background: 'none', border: 'none', color: '#4a6080', cursor: 'pointer', fontSize: 18 }}>✕</button>
             </div>
-            <div style={{ color: '#888', fontSize: 13, lineHeight: 1.85 }}>
+            <div style={{ color: '#6680a0', fontSize: 13, lineHeight: 1.85 }}>
               {[['Data We Collect','We collect your email for authentication and temporarily process PDFs for analysis. No financial data is retained.'],['How We Use Data','Email is used for account management only. PDFs are processed in-memory and deleted immediately after analysis.'],['Third Parties','Groq for analysis, Supabase for auth, Vercel for hosting.'],['Your Rights','Request account deletion: clearstatement.billing@gmail.com']].map(([t,b]) => (
-                <div key={t} style={{ marginBottom: 14 }}><div style={{ color: '#ccc', fontWeight: 600, marginBottom: 3 }}>{t}</div><div>{b}</div></div>
+                <div key={t} style={{ marginBottom: 14 }}><div style={{ color: '#ccd6e8', fontWeight: 600, marginBottom: 3 }}>{t}</div><div>{b}</div></div>
               ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* QR PAYMENT MODAL */}
+      {/* ═══════════════════════════════════════
+          PAYMENT MODAL — fully redesigned
+      ═══════════════════════════════════════ */}
       {selectedPlan && (
         <div className="modal-overlay" onClick={() => setSelectedPlan(null)}>
-          <div className="modal-box" style={{ textAlign: 'center', maxWidth: 380 }} onClick={e => e.stopPropagation()}>
-            <button onClick={() => setSelectedPlan(null)} style={{ position: 'absolute', top: 18, right: 18, background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: 18 }}>✕</button>
-            <div style={{ fontSize: 10, color: '#00d4ff', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>{selectedPlan.label} PLAN</div>
-            <div style={{ fontSize: 38, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', marginBottom: 4 }}>{selectedPlan.price}</div>
-            <div style={{ fontSize: 13, color: '#666', marginBottom: 24 }}>{selectedPlan.scans}</div>
-            <div style={{ background: '#fff', borderRadius: 14, padding: 14, display: 'inline-block', marginBottom: 18 }}>
-              <img src="/qr.png" alt="UPI QR Code" style={{ width: 190, height: 190, display: 'block' }} />
+          <div className="modal-box" style={{ maxWidth: 420, padding: '28px 26px' }} onClick={e => e.stopPropagation()}>
+
+            {/* Close button */}
+            <button onClick={() => setSelectedPlan(null)} style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#6680a0', cursor: 'pointer', fontSize: 13, width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}>✕</button>
+
+            {/* ── TIMER ── */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                background: timerUrgent ? 'rgba(239,68,68,0.1)' : 'rgba(0,212,255,0.07)',
+                border: `1px solid ${timerUrgent ? 'rgba(239,68,68,0.4)' : 'rgba(0,212,255,0.25)'}`,
+                borderRadius: 24, padding: '6px 16px',
+                animation: timerUrgent ? 'pulse-red 1.2s infinite' : 'none'
+              }}>
+                <span style={{ fontSize: 14 }}>{timerUrgent ? '🔴' : '⏱️'}</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color: timerUrgent ? '#ef4444' : '#00d4ff', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.04em' }}>
+                  {timer === 0 ? 'Offer Expired' : `${timerDisplay} left`}
+                </span>
+                <span style={{ fontSize: 10, color: timerUrgent ? '#ef444480' : '#00d4ff60', fontWeight: 600 }}>· price holds</span>
+              </div>
             </div>
-            <div style={{ fontSize: 14, color: '#ccc', marginBottom: 4, fontWeight: 500 }}>Scan with any UPI app</div>
-            <div style={{ fontSize: 12, color: '#555', marginBottom: 22 }}>PhonePe · GPay · Paytm · BHIM</div>
-            <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 12, padding: 16, marginBottom: 16, textAlign: 'left' }}>
-              <div style={{ fontSize: 13, color: '#888', marginBottom: 6 }}>After payment, email your transaction ID to:</div>
-              <div style={{ fontSize: 14, color: '#00d4ff', fontWeight: 700, marginBottom: 6 }}>clearstatement.billing@gmail.com</div>
-              <div style={{ fontSize: 12, color: '#555' }}>Scans activated within 2 hours</div>
+
+            {/* ── PLAN HEADER ── */}
+            <div style={{ textAlign: 'center', marginBottom: 18 }}>
+              <div style={{ fontSize: 9, color: '#00d4ff', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 5 }}>{selectedPlan.label} PLAN</div>
+              <div style={{ fontSize: 44, fontWeight: 900, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 5 }}>{selectedPlan.price}</div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 20, padding: '3px 12px' }}>
+                <span style={{ color: '#10b981', fontSize: 11, fontWeight: 600 }}>✓ {selectedPlan.scans} · Never expires</span>
+              </div>
             </div>
-            <button onClick={() => setSelectedPlan(null)} style={{ width: '100%', background: 'none', border: '1px solid #1a1a1a', color: '#666', padding: '11px', borderRadius: 10, cursor: 'pointer', fontSize: 13 }}>Close</button>
+
+            {/* ── QR CODE ── */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f8faff, #eef2ff)',
+              borderRadius: 20, padding: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 16,
+              boxShadow: '0 8px 40px rgba(0,100,255,0.15), 0 2px 8px rgba(0,0,0,0.3)'
+            }}>
+              <img src="/qr.png" alt="UPI QR Code" style={{ width: 200, height: 200, display: 'block', borderRadius: 10 }} />
+            </div>
+
+            {/* ── UPI APPS ── */}
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div style={{ fontSize: 13, color: '#ccd6e8', fontWeight: 600, marginBottom: 8 }}>Scan with any UPI app</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
+                {['PhonePe', 'GPay', 'Paytm', 'BHIM'].map(app => (
+                  <span key={app} style={{ fontSize: 10, color: '#4a7090', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', padding: '3px 9px', borderRadius: 6, fontWeight: 500 }}>{app}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* ── DIVIDER ── */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+              <span style={{ fontSize: 9, color: '#2a4060', fontWeight: 700, letterSpacing: '0.1em' }}>AFTER PAYMENT</span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+            </div>
+
+            {/* ── EMAIL BUTTON — opens Gmail pre-filled ── */}
+            <a
+              href={buildMailtoLink(selectedPlan)}
+              className="email-btn"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                width: '100%', padding: '14px 18px', borderRadius: 13,
+                background: 'linear-gradient(135deg, #0a2a52, #0e3a70)',
+                border: '1px solid rgba(0,150,255,0.25)',
+                color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: 14,
+                boxShadow: '0 6px 24px rgba(0,80,200,0.25)',
+                transition: 'all 0.18s', marginBottom: 8, cursor: 'pointer',
+                letterSpacing: '-0.01em'
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60c0ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              Send Payment Confirmation →
+            </a>
+
+            <p style={{ textAlign: 'center', fontSize: 11, color: '#2a4060', marginBottom: 14, lineHeight: 1.6 }}>
+              Opens Gmail with your plan details pre-filled · Scans activated within 2 hours
+            </p>
+
+            {/* ── CLOSE ── */}
+            <button onClick={() => setSelectedPlan(null)} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#3a5070', padding: '11px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 500, transition: 'all 0.15s' }}>Close</button>
           </div>
         </div>
       )}
 
       {/* NAVBAR */}
-      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #111', padding: '0 28px', height: 58, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(2,8,24,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '0 28px', height: 58, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button onClick={goHome} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 9 }}>
           <div style={{ width: 28, height: 28, background: 'linear-gradient(135deg, #00d4ff, #0055cc)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ color: '#fff', fontWeight: 800, fontSize: 14 }}>C</span>
@@ -294,24 +395,24 @@ export default function Home() {
             <>
               {!isPaid && scansLeft > 0 && <span style={{ fontSize: 11, color: '#00d4ff', background: 'rgba(0,212,255,0.07)', border: '1px solid rgba(0,212,255,0.15)', padding: '3px 11px', borderRadius: 20, fontWeight: 600 }}>{scansLeft} free scan{scansLeft > 1 ? 's' : ''} left</span>}
               {isPaid && <span style={{ fontSize: 11, color: '#10b981', background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.15)', padding: '3px 11px', borderRadius: 20, fontWeight: 600 }}>{scansLeft} scans left</span>}
-              <img src={user.user_metadata?.avatar_url} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid #222' }} alt="Profile" />
-              <button onClick={signOut} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#888', padding: '5px 13px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>Sign out</button>
+              <img src={user.user_metadata?.avatar_url} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }} alt="Profile" />
+              <button onClick={signOut} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.08)', color: '#6680a0', padding: '5px 13px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>Sign out</button>
             </>
           ) : (
-            <button onClick={signInWithGoogle} style={{ background: '#00d4ff', color: '#000', border: 'none', padding: '7px 16px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Sign In</button>
+            <button onClick={signInWithGoogle} style={{ background: 'linear-gradient(90deg, #00d4ff, #0077ff)', color: '#000', border: 'none', padding: '7px 16px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Sign In</button>
           )}
         </div>
       </nav>
 
       {/* BANK TICKER */}
-      <div style={{ background: '#020202', borderBottom: '1px solid #0d0d0d', padding: '7px 0', overflow: 'hidden', position: 'relative' }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 60, background: 'linear-gradient(to right, #020202, transparent)', zIndex: 2 }} />
-        <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 60, background: 'linear-gradient(to left, #020202, transparent)', zIndex: 2 }} />
+      <div style={{ background: '#010612', borderBottom: '1px solid rgba(255,255,255,0.03)', padding: '7px 0', overflow: 'hidden', position: 'relative' }}>
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 60, background: 'linear-gradient(to right, #010612, transparent)', zIndex: 2 }} />
+        <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 60, background: 'linear-gradient(to left, #010612, transparent)', zIndex: 2 }} />
         <div style={{ display: 'flex', animation: 'ticker 30s linear infinite', width: 'max-content' }}>
           {[...SUPPORTED_BANKS, ...SUPPORTED_BANKS].map((bank, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0 22px', whiteSpace: 'nowrap' }}>
               <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#00d4ff', opacity: 0.4 }} />
-              <span style={{ fontSize: 10, color: '#444', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase' }}>{bank}</span>
+              <span style={{ fontSize: 10, color: '#2a4060', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase' }}>{bank}</span>
             </div>
           ))}
         </div>
@@ -323,12 +424,10 @@ export default function Home() {
         {!showPaywall && !showSignupWall && !result && (
           <div style={{ paddingBottom: 100 }}>
 
-            {/* HERO — full viewport height, upload centered */}
-            {/* CHANGED: removed paddingTop/paddingBottom, set to 0 so it's truly centered */}
+            {/* HERO */}
             <div style={{ minHeight: 'calc(100vh - 115px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 0, paddingBottom: 0 }}>
 
-              {/* BADGE */}
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: 20, padding: '4px 13px', marginBottom: 22 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: 20, padding: '4px 13px', marginBottom: 22 }}>
                 <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#00d4ff', animation: 'dot-glow 2s infinite' }} />
                 <span style={{ fontSize: 10, color: '#00d4ff', fontWeight: 600, letterSpacing: '0.09em' }}>INSTANT · SECURE · ACCURATE</span>
               </div>
@@ -338,50 +437,31 @@ export default function Home() {
                 <span style={{ background: 'linear-gradient(135deg, #00d4ff 0%, #0055cc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>In Under 60 Seconds.</span>
               </h1>
 
-              <p style={{ textAlign: 'center', fontSize: 16, color: '#888', maxWidth: 440, margin: '0 auto 36px', lineHeight: 1.7 }}>
+              <p style={{ textAlign: 'center', fontSize: 16, color: '#6680a0', maxWidth: 440, margin: '0 auto 36px', lineHeight: 1.7 }}>
                 Verify income, detect EMIs, flag bounced cheques — any Indian bank, with or without password.
               </p>
 
-              {/* STATS */}
               <div style={{ display: 'flex', justifyContent: 'center', gap: 36, marginBottom: 40, flexWrap: 'wrap' }}>
                 {[['12+','Banks Supported'],['99.2%','Accuracy'],['< 60s','Analysis Time'],['0','Data Retained']].map(([v,l]) => (
                   <div key={l} style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.025em' }}>{v}</div>
-                    <div style={{ fontSize: 10, color: '#555', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 3 }}>{l}</div>
+                    <div style={{ fontSize: 10, color: '#2a4060', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 3 }}>{l}</div>
                   </div>
                 ))}
               </div>
 
               {/* UPLOAD BOX */}
               <div style={{ width: '100%', maxWidth: 540 }}>
-                {/* CHANGED: blue glowing border on outer box */}
-                <div style={{
-                  background: '#070707',
-                  border: '1px solid rgba(0,212,255,0.28)',
-                  borderRadius: 18,
-                  padding: 24,
-                  boxShadow: '0 0 40px rgba(0,212,255,0.09), 0 0 0 1px rgba(0,212,255,0.03)'
-                }}>
+                <div style={{ background: 'linear-gradient(145deg, #050d1e, #081428)', border: '1px solid rgba(0,212,255,0.28)', borderRadius: 18, padding: 24, boxShadow: '0 0 40px rgba(0,212,255,0.09), 0 0 0 1px rgba(0,212,255,0.03)' }}>
                   <label
                     onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                     onDragLeave={() => setDragOver(false)}
                     onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f?.type === 'application/pdf') setFile(f) }}
-                    style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                      height: 160,
-                      // CHANGED: always visible blue dashed border, brighter on hover/file
-                      border: `2px dashed ${dragOver ? '#00d4ff' : file ? '#00d4ff' : 'rgba(0,212,255,0.35)'}`,
-                      borderRadius: 12,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      // CHANGED: subtle blue tint background
-                      background: dragOver ? 'rgba(0,212,255,0.04)' : file ? 'rgba(0,212,255,0.02)' : 'rgba(0,212,255,0.015)',
-                      marginBottom: 14
-                    }}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 160, border: `2px dashed ${dragOver ? '#00d4ff' : file ? '#00d4ff' : 'rgba(0,212,255,0.35)'}`, borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s', background: dragOver ? 'rgba(0,212,255,0.04)' : file ? 'rgba(0,212,255,0.02)' : 'rgba(0,212,255,0.015)', marginBottom: 14 }}
                   >
                     {file ? (
                       <div style={{ textAlign: 'center', padding: 14 }}>
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
                           <svg width="18" height="18" fill="none" stroke="#00d4ff" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </div>
                         <div style={{ color: '#ddd', fontWeight: 600, fontSize: 13, marginBottom: 3, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
@@ -389,12 +469,11 @@ export default function Home() {
                       </div>
                     ) : (
                       <div style={{ textAlign: 'center', padding: 14 }}>
-                        {/* CHANGED: icon box now has blue tint to match border */}
                         <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(0,212,255,0.07)', border: '1px solid rgba(0,212,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', animation: 'float 3s ease-in-out infinite' }}>
                           <svg width="18" height="18" fill="none" stroke="#00d4ff" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                         </div>
                         <div style={{ color: '#bbb', fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Drop your bank statement here</div>
-                        <div style={{ color: '#555', fontSize: 12 }}>or click to browse · PDF only</div>
+                        <div style={{ color: '#3a5070', fontSize: 12 }}>or click to browse · PDF only</div>
                       </div>
                     )}
                     <input type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => setFile(e.target.files?.[0] || null)} />
@@ -407,12 +486,12 @@ export default function Home() {
                   )}
 
                   {loading && (
-                    <div style={{ marginBottom: 12, background: '#050505', border: '1px solid #141414', borderRadius: 11, padding: 16 }}>
+                    <div style={{ marginBottom: 12, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 11, padding: 16 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 9 }}>
                         <span style={{ fontSize: 12, color: '#00d4ff', fontWeight: 500 }}>{loadingText}</span>
                         <span style={{ fontSize: 12, color: '#fff', fontWeight: 700 }}>{Math.round(progress)}%</span>
                       </div>
-                      <div style={{ height: 2, background: '#111', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{ height: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 2, overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #00d4ff, #0055cc)', borderRadius: 2, transition: 'width 0.6s ease' }} />
                       </div>
                     </div>
@@ -420,25 +499,25 @@ export default function Home() {
 
                   {!loading && (
                     <div style={{ display: 'flex', gap: 9 }}>
-                      <button onClick={handleUpload} disabled={!file} style={{ flex: 1, padding: '12px 18px', borderRadius: 10, fontSize: 14, background: file ? '#00d4ff' : '#0d0d0d', color: file ? '#000' : '#444', border: file ? 'none' : '1px solid #1a1a1a', cursor: file ? 'pointer' : 'not-allowed', fontWeight: 700, transition: 'all 0.15s' }}>
+                      <button onClick={handleUpload} disabled={!file} style={{ flex: 1, padding: '12px 18px', borderRadius: 10, fontSize: 14, background: file ? 'linear-gradient(90deg, #00d4ff, #0077ff)' : 'rgba(255,255,255,0.03)', color: file ? '#000' : '#3a5070', border: file ? 'none' : '1px solid rgba(255,255,255,0.06)', cursor: file ? 'pointer' : 'not-allowed', fontWeight: 700, transition: 'all 0.15s', boxShadow: file ? '0 4px 20px rgba(0,212,255,0.2)' : 'none' }}>
                         {!user ? '⚡ Analyse Free' : '⚡ Run Analysis'}
                       </button>
-                      {file && <button onClick={() => { setFile(null); setPdfPassword('') }} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#666', padding: '12px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 13 }}>Clear</button>}
+                      {file && <button onClick={() => { setFile(null); setPdfPassword('') }} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.08)', color: '#4a6080', padding: '12px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 13 }}>Clear</button>}
                     </div>
                   )}
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 14, paddingTop: 14, borderTop: '1px solid #111' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                     {[['🔐','256-bit SSL'],['🗑️','Deleted instantly'],['🇮🇳','Indian banks']].map(([icon,label]) => (
                       <div key={label as string} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ fontSize: 11 }}>{icon}</span>
-                        <span style={{ fontSize: 10, color: '#555', fontWeight: 500 }}>{label}</span>
+                        <span style={{ fontSize: 10, color: '#2a4060', fontWeight: 500 }}>{label}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {!user && (
-                  <p style={{ textAlign: 'center', fontSize: 12, color: '#444', marginTop: 12 }}>
+                  <p style={{ textAlign: 'center', fontSize: 12, color: '#2a4060', marginTop: 12 }}>
                     1 free scan without signup · Sign in for 2 more free scans
                   </p>
                 )}
@@ -446,22 +525,21 @@ export default function Home() {
             </div>
 
             {/* REVIEWS */}
-            <div style={{ marginTop: 20, paddingTop: 80, borderTop: '1px solid #0d0d0d' }}>
+            <div style={{ marginTop: 20, paddingTop: 80, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
               <div style={{ textAlign: 'center', marginBottom: 36 }}>
                 <div style={{ fontSize: 10, color: '#00d4ff', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 9 }}>Trusted by Professionals</div>
                 <h2 style={{ fontSize: 'clamp(20px, 3vw, 30px)', fontWeight: 700, color: '#fff', letterSpacing: '-0.025em' }}>What underwriters say</h2>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
                 {REVIEWS.map((r, i) => (
-                  // CHANGED: slightly brighter border + inset highlight
-                  <div key={i} style={{ background: '#060606', border: '1px solid #1e1e1e', borderRadius: 14, padding: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)' }}>
+                  <div key={i} style={{ background: 'linear-gradient(145deg, #060e1a, #081428)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)' }}>
                     <div style={{ display: 'flex', gap: 2, marginBottom: 10 }}>{'★★★★★'.split('').map((s,j) => <span key={j} style={{ color: '#f59e0b', fontSize: 12 }}>{s}</span>)}</div>
-                    <p style={{ color: '#777', fontSize: 13, lineHeight: 1.7, marginBottom: 16, fontStyle: 'italic' }}>"{r.text}"</p>
+                    <p style={{ color: '#6680a0', fontSize: 13, lineHeight: 1.7, marginBottom: 16, fontStyle: 'italic' }}>"{r.text}"</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#0d0d0d', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#00d4ff' }}>{r.avatar}</div>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#00d4ff' }}>{r.avatar}</div>
                       <div>
-                        <div style={{ color: '#ccc', fontWeight: 600, fontSize: 12 }}>{r.name}</div>
-                        <div style={{ color: '#555', fontSize: 11 }}>{r.role}</div>
+                        <div style={{ color: '#ccd6e8', fontWeight: 600, fontSize: 12 }}>{r.name}</div>
+                        <div style={{ color: '#3a5070', fontSize: 11 }}>{r.role}</div>
                       </div>
                     </div>
                   </div>
@@ -475,11 +553,10 @@ export default function Home() {
               <h2 style={{ fontSize: 'clamp(20px, 3vw, 30px)', fontWeight: 700, color: '#fff', marginBottom: 36, letterSpacing: '-0.025em' }}>Three steps to clarity</h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14 }}>
                 {[{n:'01',t:'Upload PDF',d:'Drop any Indian bank statement. Password protected or not — handled automatically.'},{n:'02',t:'Smart Analysis',d:'Reads every transaction, detects salary, EMIs, and risk indicators instantly.'},{n:'03',t:'Get Report',d:'Verified summary with income, EMIs, bounces, and risk score in seconds.'}].map(item => (
-                  // CHANGED: slightly brighter border + inset highlight
-                  <div key={item.n} style={{ background: '#060606', border: '1px solid #1e1e1e', borderRadius: 14, padding: 24, textAlign: 'left', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)' }}>
-                    <div style={{ fontSize: 36, fontWeight: 800, color: '#111', marginBottom: 12, lineHeight: 1, letterSpacing: '-0.04em' }}>{item.n}</div>
-                    <div style={{ color: '#ccc', fontWeight: 600, fontSize: 14, marginBottom: 7 }}>{item.t}</div>
-                    <div style={{ color: '#666', fontSize: 12, lineHeight: 1.65 }}>{item.d}</div>
+                  <div key={item.n} style={{ background: 'linear-gradient(145deg, #060e1a, #081428)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: 24, textAlign: 'left', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)' }}>
+                    <div style={{ fontSize: 36, fontWeight: 800, color: 'rgba(0,212,255,0.12)', marginBottom: 12, lineHeight: 1, letterSpacing: '-0.04em' }}>{item.n}</div>
+                    <div style={{ color: '#ccd6e8', fontWeight: 600, fontSize: 14, marginBottom: 7 }}>{item.t}</div>
+                    <div style={{ color: '#4a6080', fontSize: 12, lineHeight: 1.65 }}>{item.d}</div>
                   </div>
                 ))}
               </div>
@@ -489,7 +566,7 @@ export default function Home() {
             <div style={{ marginTop: 90, textAlign: 'center' }}>
               <div style={{ fontSize: 10, color: '#00d4ff', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 9 }}>Pricing</div>
               <h2 style={{ fontSize: 'clamp(20px, 3vw, 30px)', fontWeight: 700, color: '#fff', marginBottom: 8, letterSpacing: '-0.025em' }}>Simple, transparent pricing</h2>
-              <p style={{ color: '#666', fontSize: 13, marginBottom: 36 }}>Pay once, no subscription. Scans never expire.</p>
+              <p style={{ color: '#4a6080', fontSize: 13, marginBottom: 36 }}>Pay once, no subscription. Scans never expire.</p>
               <PricingGrid />
             </div>
           </div>
@@ -515,21 +592,21 @@ export default function Home() {
                 {label:'Monthly EMI Load', value:`₹${(result.total_emi||0).toLocaleString('en-IN')}`, sub:'Auto-debits & loans', color:'#f59e0b'},
                 {label:'Average Balance', value:`₹${(result.average_balance||0).toLocaleString('en-IN')}`, sub:'Across statement period', color:'#00d4ff'},
               ].map(card => (
-                <div key={card.label} style={{ background: '#060606', border: '1px solid #111', borderRadius: 14, padding: 22 }}>
-                  <div style={{ fontSize: 9, color: '#444', fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 9 }}>{card.label}</div>
+                <div key={card.label} style={{ background: 'linear-gradient(145deg, #060e1a, #081428)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: 22 }}>
+                  <div style={{ fontSize: 9, color: '#2a4060', fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 9 }}>{card.label}</div>
                   <div style={{ fontSize: 30, fontWeight: 800, color: card.color, marginBottom: 5, letterSpacing: '-0.025em' }}>{card.value}</div>
-                  <div style={{ fontSize: 11, color: '#555' }}>{card.sub}</div>
+                  <div style={{ fontSize: 11, color: '#3a5070' }}>{card.sub}</div>
                 </div>
               ))}
               {result.summary && (
-                <div style={{ background: '#060606', border: '1px solid #111', borderRadius: 14, padding: 22, gridColumn: '1 / -1' }}>
-                  <div style={{ fontSize: 9, color: '#444', fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 9 }}>Smart Summary</div>
-                  <div style={{ color: '#888', fontSize: 13, lineHeight: 1.7 }}>{result.summary}</div>
+                <div style={{ background: 'linear-gradient(145deg, #060e1a, #081428)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: 22, gridColumn: '1 / -1' }}>
+                  <div style={{ fontSize: 9, color: '#2a4060', fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 9 }}>Smart Summary</div>
+                  <div style={{ color: '#6680a0', fontSize: 13, lineHeight: 1.7 }}>{result.summary}</div>
                 </div>
               )}
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={goHome} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#666', padding: '10px 20px', borderRadius: 10, cursor: 'pointer', fontSize: 13 }}>← Analyse Another</button>
+              <button onClick={goHome} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.08)', color: '#4a6080', padding: '10px 20px', borderRadius: 10, cursor: 'pointer', fontSize: 13 }}>← Analyse Another</button>
             </div>
           </div>
         )}
@@ -539,8 +616,8 @@ export default function Home() {
           <div style={{ paddingTop: 110, paddingBottom: 80, textAlign: 'center', maxWidth: 400, margin: '0 auto', animation: 'slideUp 0.3s' }}>
             <div style={{ fontSize: 42, marginBottom: 18 }}>🔒</div>
             <h2 style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: 9, letterSpacing: '-0.025em' }}>Create a free account</h2>
-            <p style={{ color: '#777', fontSize: 14, marginBottom: 28, lineHeight: 1.65 }}>You have used your guest scan. Sign in to get 2 more free scans — no card required.</p>
-            <button onClick={signInWithGoogle} style={{ background: '#00d4ff', color: '#000', border: 'none', padding: '12px 26px', borderRadius: 11, cursor: 'pointer', fontSize: 15, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 9 }}>
+            <p style={{ color: '#6680a0', fontSize: 14, marginBottom: 28, lineHeight: 1.65 }}>You have used your guest scan. Sign in to get 2 more free scans — no card required.</p>
+            <button onClick={signInWithGoogle} style={{ background: 'linear-gradient(90deg, #00d4ff, #0077ff)', color: '#000', border: 'none', padding: '12px 26px', borderRadius: 11, cursor: 'pointer', fontSize: 15, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 9 }}>
               Continue with Google
             </button>
           </div>
@@ -552,18 +629,18 @@ export default function Home() {
             <div style={{ textAlign: 'center', marginBottom: 44 }}>
               <div style={{ fontSize: 10, color: '#00d4ff', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 9 }}>Scans Used Up</div>
               <h2 style={{ fontSize: 'clamp(20px, 3vw, 30px)', fontWeight: 700, color: '#fff', marginBottom: 8, letterSpacing: '-0.025em' }}>Choose a plan to continue</h2>
-              <p style={{ color: '#666', fontSize: 13 }}>Pay once. Scans never expire.</p>
+              <p style={{ color: '#4a6080', fontSize: 13 }}>Pay once. Scans never expire.</p>
             </div>
             <PricingGrid />
             <div style={{ textAlign: 'center', marginTop: 24 }}>
-              <button onClick={goHome} style={{ background: 'none', border: 'none', color: '#444', fontSize: 13, cursor: 'pointer' }}>← Go back</button>
+              <button onClick={goHome} style={{ background: 'none', border: 'none', color: '#2a4060', fontSize: 13, cursor: 'pointer' }}>← Go back</button>
             </div>
           </div>
         )}
       </div>
 
       {/* FOOTER */}
-      <footer style={{ borderTop: '1px solid #0d0d0d', background: '#000', padding: '40px 28px 24px', marginTop: 40 }}>
+      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.04)', background: '#010612', padding: '40px 28px 24px', marginTop: 40 }}>
         <div style={{ maxWidth: 1060, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 28, marginBottom: 36 }}>
             <div>
@@ -571,36 +648,33 @@ export default function Home() {
                 <div style={{ width: 24, height: 24, background: 'linear-gradient(135deg, #00d4ff, #0055cc)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <span style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>C</span>
                 </div>
-                <span style={{ fontWeight: 700, fontSize: 14, color: '#ddd', letterSpacing: '-0.02em' }}>ClearStatement</span>
+                <span style={{ fontWeight: 700, fontSize: 14, color: '#ccd6e8', letterSpacing: '-0.02em' }}>ClearStatement</span>
               </div>
-              <p style={{ color: '#333', fontSize: 11, maxWidth: 200, lineHeight: 1.65 }}>Smart bank statement analysis for Indian financial professionals.</p>
+              <p style={{ color: '#1e3050', fontSize: 11, maxWidth: 200, lineHeight: 1.65 }}>Smart bank statement analysis for Indian financial professionals.</p>
             </div>
             <div style={{ display: 'flex', gap: 44, flexWrap: 'wrap' }}>
               <div>
-                <div style={{ color: '#333', fontSize: 9, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 12 }}>Legal</div>
+                <div style={{ color: '#1e3050', fontSize: 9, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 12 }}>Legal</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                  <button onClick={() => setShowPrivacy(true)} style={{ background: 'none', border: 'none', color: '#555', fontSize: 11, cursor: 'pointer', textAlign: 'left', padding: 0 }}>Privacy Policy</button>
-                  <button onClick={() => setShowTerms(true)} style={{ background: 'none', border: 'none', color: '#555', fontSize: 11, cursor: 'pointer', textAlign: 'left', padding: 0 }}>Terms of Service</button>
+                  <button onClick={() => setShowPrivacy(true)} style={{ background: 'none', border: 'none', color: '#3a5070', fontSize: 11, cursor: 'pointer', textAlign: 'left', padding: 0 }}>Privacy Policy</button>
+                  <button onClick={() => setShowTerms(true)} style={{ background: 'none', border: 'none', color: '#3a5070', fontSize: 11, cursor: 'pointer', textAlign: 'left', padding: 0 }}>Terms of Service</button>
                 </div>
               </div>
               <div>
-                <div style={{ color: '#333', fontSize: 9, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 12 }}>Support</div>
+                <div style={{ color: '#1e3050', fontSize: 9, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 12 }}>Support</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                  <a href="mailto:clearstatement.billing@gmail.com" style={{ color: '#555', fontSize: 11, textDecoration: 'none' }}>Contact Us</a>
-                  <span style={{ color: '#333', fontSize: 10 }}>clearstatement.billing@gmail.com</span>
+                  <a href="mailto:clearstatement.billing@gmail.com" style={{ color: '#3a5070', fontSize: 11, textDecoration: 'none' }}>Contact Us</a>
+                  <span style={{ color: '#1e3050', fontSize: 10 }}>clearstatement.billing@gmail.com</span>
                 </div>
               </div>
             </div>
           </div>
-          <div style={{ borderTop: '1px solid #0d0d0d', paddingTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-            <span style={{ color: '#333', fontSize: 10 }}>© 2026 ClearStatement. All rights reserved.</span>
-            <span style={{ color: '#333', fontSize: 10 }}>Engineered by <span style={{ color: '#00d4ff', fontWeight: 600 }}>TheArise</span></span>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <span style={{ color: '#1e3050', fontSize: 10 }}>© 2026 ClearStatement. All rights reserved.</span>
+            <span style={{ color: '#1e3050', fontSize: 10 }}>Engineered by <span style={{ color: '#00d4ff', fontWeight: 600 }}>TheArise</span></span>
           </div>
         </div>
       </footer>
     </div>
   )
 }
-
-
-
