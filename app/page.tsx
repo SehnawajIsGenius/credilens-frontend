@@ -63,15 +63,12 @@ export default function Home() {
   const [selectedPlan, setSelectedPlan] = useState<typeof PLANS[0] | null>(null)
   const [timer, setTimer] = useState(600)
 
-  // 10 min countdown timer — resets each time a plan modal opens
+  // 10-min countdown — resets each time a plan modal opens
   useEffect(() => {
     if (!selectedPlan) return
     setTimer(600)
     const interval = setInterval(() => {
-      setTimer(t => {
-        if (t <= 1) { clearInterval(interval); return 0 }
-        return t - 1
-      })
+      setTimer(t => { if (t <= 1) { clearInterval(interval); return 0 } return t - 1 })
     }, 1000)
     return () => clearInterval(interval)
   }, [selectedPlan])
@@ -170,14 +167,23 @@ export default function Home() {
   const riskColor = (s: number) => s >= 7 ? '#10b981' : s >= 4 ? '#f59e0b' : '#ef4444'
   const riskLabel = (s: number) => s >= 7 ? 'LOW RISK' : s >= 4 ? 'MEDIUM RISK' : 'HIGH RISK'
 
-  // Builds a mailto: link that opens Gmail with plan details pre-filled
-  const buildMailtoLink = (plan: typeof PLANS[0]) => {
-    const email = 'clearstatement.billing@gmail.com'
-    const subject = encodeURIComponent(`Payment Confirmation – ClearStatement ${plan.label} Plan (${plan.price})`)
-    const body = encodeURIComponent(
+  // ─────────────────────────────────────────────────────────────
+  // GMAIL WEB COMPOSE — works on every device & browser
+  // Opens mail.google.com directly instead of the OS mail app
+  // ─────────────────────────────────────────────────────────────
+  const openGmailCompose = (plan: typeof PLANS[0]) => {
+    const to = 'clearstatement.billing@gmail.com'
+    const subject = `Payment Confirmation – ClearStatement ${plan.label} Plan (${plan.price})`
+    const body =
       `Hi,\n\nI have completed the UPI payment for the following plan:\n\nPlan: ${plan.label} – ${plan.price} (${plan.scans})\nTransaction ID: [paste your transaction ID here]\nUPI App used: [PhonePe / GPay / Paytm / BHIM]\n\nPlease activate my scans at the earliest.\n\nThank you!`
-    )
-    return `mailto:${email}?subject=${subject}&body=${body}`
+
+    const gmailUrl =
+      `https://mail.google.com/mail/?view=cm` +
+      `&to=${encodeURIComponent(to)}` +
+      `&su=${encodeURIComponent(subject)}` +
+      `&body=${encodeURIComponent(body)}`
+
+    window.open(gmailUrl, '_blank', 'noopener,noreferrer')
   }
 
   if (authLoading) return (
@@ -239,9 +245,10 @@ export default function Home() {
         input:focus { border-color: #00d4ff !important; outline: none !important; box-shadow: 0 0 0 3px rgba(0,212,255,0.07) !important; }
         input::placeholder { color: #3a5070 !important; }
         button { font-family: 'Inter',sans-serif; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(1,4,16,0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.2s; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(1,4,16,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.2s; }
         .modal-box { background: linear-gradient(160deg, #070f24 0%, #0a1630 60%, #060e20 100%); border: 1px solid rgba(0,212,255,0.18); border-radius: 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 34px; position: relative; box-shadow: 0 32px 80px rgba(0,0,0,0.7), 0 0 60px rgba(0,100,255,0.08), inset 0 1px 0 rgba(255,255,255,0.05); }
-        .email-btn:hover { background: linear-gradient(135deg, #0d3570, #1050a0) !important; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,100,255,0.3) !important; }
+        .gmail-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px 18px; border-radius: 13px; background: linear-gradient(135deg, #0a2a52, #0e3a70); border: 1px solid rgba(0,150,255,0.25); color: #fff; font-weight: 700; font-size: 14px; box-shadow: 0 6px 24px rgba(0,80,200,0.25); transition: all 0.18s; margin-bottom: 10px; cursor: pointer; letter-spacing: -0.01em; text-decoration: none; font-family: 'Inter',sans-serif; }
+        .gmail-btn:hover { background: linear-gradient(135deg, #0d3570, #1050a0) !important; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,100,255,0.35) !important; }
         ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-track { background: #020818; } ::-webkit-scrollbar-thumb { background: #1a3050; }
       `}</style>
 
@@ -287,14 +294,17 @@ export default function Home() {
       )}
 
       {/* ═══════════════════════════════════════
-          PAYMENT MODAL — fully redesigned
+          PAYMENT MODAL
       ═══════════════════════════════════════ */}
       {selectedPlan && (
         <div className="modal-overlay" onClick={() => setSelectedPlan(null)}>
           <div className="modal-box" style={{ maxWidth: 420, padding: '28px 26px' }} onClick={e => e.stopPropagation()}>
 
-            {/* Close button */}
-            <button onClick={() => setSelectedPlan(null)} style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#6680a0', cursor: 'pointer', fontSize: 13, width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}>✕</button>
+            {/* Close */}
+            <button
+              onClick={() => setSelectedPlan(null)}
+              style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#6680a0', cursor: 'pointer', fontSize: 13, width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >✕</button>
 
             {/* ── TIMER ── */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
@@ -313,16 +323,16 @@ export default function Home() {
               </div>
             </div>
 
-            {/* ── PLAN HEADER ── */}
+            {/* Plan header */}
             <div style={{ textAlign: 'center', marginBottom: 18 }}>
               <div style={{ fontSize: 9, color: '#00d4ff', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 5 }}>{selectedPlan.label} PLAN</div>
-              <div style={{ fontSize: 44, fontWeight: 900, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 5 }}>{selectedPlan.price}</div>
+              <div style={{ fontSize: 44, fontWeight: 900, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 8 }}>{selectedPlan.price}</div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 20, padding: '3px 12px' }}>
                 <span style={{ color: '#10b981', fontSize: 11, fontWeight: 600 }}>✓ {selectedPlan.scans} · Never expires</span>
               </div>
             </div>
 
-            {/* ── QR CODE ── */}
+            {/* QR Code */}
             <div style={{
               background: 'linear-gradient(135deg, #f8faff, #eef2ff)',
               borderRadius: 20, padding: 16,
@@ -333,8 +343,8 @@ export default function Home() {
               <img src="/qr.png" alt="UPI QR Code" style={{ width: 200, height: 200, display: 'block', borderRadius: 10 }} />
             </div>
 
-            {/* ── UPI APPS ── */}
-            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            {/* UPI apps */}
+            <div style={{ textAlign: 'center', marginBottom: 18 }}>
               <div style={{ fontSize: 13, color: '#ccd6e8', fontWeight: 600, marginBottom: 8 }}>Scan with any UPI app</div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
                 {['PhonePe', 'GPay', 'Paytm', 'BHIM'].map(app => (
@@ -343,41 +353,57 @@ export default function Home() {
               </div>
             </div>
 
-            {/* ── DIVIDER ── */}
+            {/* ── PAYMENT INSTRUCTIONS ── */}
+            <div style={{
+              background: 'rgba(0,212,255,0.04)',
+              border: '1px solid rgba(0,212,255,0.12)',
+              borderRadius: 12,
+              padding: '14px 16px',
+              marginBottom: 18
+            }}>
+              <div style={{ fontSize: 9, color: '#00d4ff', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>How to Pay</div>
+              {[
+                { n: '1', t: 'Scan the QR code above using PhonePe, GPay, Paytm, or any UPI app and complete the payment.' },
+                { n: '2', t: 'Click the button below — Gmail will open with your plan details pre-filled. Just paste your Transaction ID.' },
+                { n: '3', t: 'Send the email and your scans will be activated within 2 hours.' },
+              ].map(step => (
+                <div key={step.n} style={{ display: 'flex', gap: 10, marginBottom: 8, alignItems: 'flex-start' }}>
+                  <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                    <span style={{ fontSize: 9, color: '#00d4ff', fontWeight: 700 }}>{step.n}</span>
+                  </div>
+                  <p style={{ fontSize: 12, color: '#6680a0', lineHeight: 1.6, margin: 0 }}>{step.t}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Divider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
-              <span style={{ fontSize: 9, color: '#2a4060', fontWeight: 700, letterSpacing: '0.1em' }}>AFTER PAYMENT</span>
+              <span style={{ fontSize: 9, color: '#2a4060', fontWeight: 700, letterSpacing: '0.1em' }}>CONFIRM PAYMENT</span>
               <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
             </div>
 
-            {/* ── EMAIL BUTTON — opens Gmail pre-filled ── */}
-            <a
-              href={buildMailtoLink(selectedPlan)}
-              className="email-btn"
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                width: '100%', padding: '14px 18px', borderRadius: 13,
-                background: 'linear-gradient(135deg, #0a2a52, #0e3a70)',
-                border: '1px solid rgba(0,150,255,0.25)',
-                color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: 14,
-                boxShadow: '0 6px 24px rgba(0,80,200,0.25)',
-                transition: 'all 0.18s', marginBottom: 8, cursor: 'pointer',
-                letterSpacing: '-0.01em'
-              }}
+            {/* ── GMAIL BUTTON — opens Gmail web compose on any device ── */}
+            <button
+              className="gmail-btn"
+              onClick={() => openGmailCompose(selectedPlan)}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60c0ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="4" width="20" height="16" rx="2"/>
                 <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
               </svg>
-              Send Payment Confirmation →
-            </a>
+              Send Confirmation via Gmail →
+            </button>
 
             <p style={{ textAlign: 'center', fontSize: 11, color: '#2a4060', marginBottom: 14, lineHeight: 1.6 }}>
-              Opens Gmail with your plan details pre-filled · Scans activated within 2 hours
+              Opens Gmail in your browser · Works on mobile & desktop
             </p>
 
-            {/* ── CLOSE ── */}
-            <button onClick={() => setSelectedPlan(null)} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#3a5070', padding: '11px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 500, transition: 'all 0.15s' }}>Close</button>
+            {/* Close */}
+            <button
+              onClick={() => setSelectedPlan(null)}
+              style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#3a5070', padding: '11px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}
+            >Close</button>
           </div>
         </div>
       )}
@@ -442,7 +468,7 @@ export default function Home() {
               </p>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: 36, marginBottom: 40, flexWrap: 'wrap' }}>
-                {[['12+','Banks Supported'],['99.2%','Accuracy'],['< 60s','Analysis Time'],['0','Data Retained']].map(([v,l]) => (
+                {[['16+','Banks Supported'],['99%+','Accuracy'],['< 60s','Analysis Time'],['0','Data Retained']].map(([v,l]) => (
                   <div key={l} style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.025em' }}>{v}</div>
                     <div style={{ fontSize: 10, color: '#2a4060', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 3 }}>{l}</div>
@@ -678,3 +704,5 @@ export default function Home() {
     </div>
   )
 }
+
+
