@@ -33,7 +33,7 @@ export default function RootLayout({
       <head>
         <script
           async
-          src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
+          src="https://www.googletagmanager.com/gtag/js?id=G-21BG6FT5X0"
         />
         <script
           dangerouslySetInnerHTML={{
@@ -50,6 +50,7 @@ export default function RootLayout({
     </html>
   );
 }
+
 
 
 
