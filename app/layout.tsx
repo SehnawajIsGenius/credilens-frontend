@@ -20,7 +20,6 @@ export const metadata = {
   },
 }
 
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,8 +30,26 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-21BG6FT5X0');
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }
+
+
 
